@@ -1,0 +1,40 @@
+# Visual Studio hidden folder (cache, indexes, user settings)
+.vs/
+*.user
+*.userossc
+*.sln.docstates
+
+# Build outputs and temporary execution binaries
+[Bb]in/
+[Oo]bj/
+[LLEe]og/
+[Ll]ogs/
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userquery
+
+# NuGet Packages directory
+*.nupkg
+**/packages/*
+!**/packages/build/
+
+# Microsoft HTTP / API test files containing secrets
+*.env
+*.env.local
+appsettings.Development.json
+
+# Test results and coverage reports
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.coverage
+*.coveragexml
+
+# Publish outputs
+**/publish/
+
+# Rider / JetBrains IDE files (if anyone on your team uses Rider)
+.idea/
+*.sln.iml
