@@ -1,4 +1,5 @@
 using SignalRApp.Services;
+using SignalRApp.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,4 +22,3 @@ app.UseStaticFiles();
 app.MapHub<AppHub>("/hub");
 
 app.Run();
-

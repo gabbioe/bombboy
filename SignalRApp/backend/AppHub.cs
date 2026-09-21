@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
+using SignalRApp.Models;
 using SignalRApp.Services;
 
 // Inheriting from "Hub" gives this class superpowers:
@@ -11,6 +12,9 @@ public class AppHub : Hub
 
     public AppHub(GameManager gameManager)
     {
+
+
+
         _gameManager = gameManager;
     }
     public override async Task OnConnectedAsync()

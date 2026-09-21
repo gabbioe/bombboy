@@ -6,6 +6,9 @@ namespace SignalRApp.Services;
 
 public class GameManager
 {
+
+ 
+
     private readonly ConcurrentDictionary<string, Player> _players = new();
 
     public Player AddPlayer(string connectionId)
