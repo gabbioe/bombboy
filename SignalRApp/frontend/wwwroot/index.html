@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BombBoy - Simple Prototype</title>
+    <!-- SignalR client library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #1e1e1e;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            gap: 15px;
+        }
+
+        #status-bar {
+            font-size: 16px;
+        }
+
+        #status {
+            font-weight: bold;
+            color: #f1c40f;
+        }
+
+        /* 10x10 Grid Board (40px per tile) */
+        #board {
+            position: relative;
+            width: 400px;
+            height: 400px;
+            background-color: #558b2f;
+            background-image:
+                linear-gradient(#4b7c29 1px, transparent 1px),
+                linear-gradient(90deg, #4b7c29 1px, transparent 1px);
+            background-size: 40px 40px;
+            border: 3px solid #2e461b;
+            border-radius: 4px;
+        }
+
+        /* Simple Player Graphic */
+        .player {
+            position: absolute;
+            width: 32px;
+            height: 32px;
+            background: #e74c3c;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: bold;
+            color: #fff;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+            transition: left 0.1s ease, top 0.1s ease;
+        }
+
+        #instructions {
+            font-size: 14px;
+            color: #aaa;
+        }
+
+        #players-list {
+            font-size: 14px;
+            color: #ddd;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="status-bar">
+        Status: <span id="status">Connecting...</span>
+    </div>
+
+    <!-- Game Board -->
+    <div id="board"></div>
+
+    <div id="instructions">
+        Move: <strong>W, A, S, D</strong> or <strong>Arrow Keys</strong>
+    </div>
+
+    <div id="players-list"></div>
+
+    <script>
+        const TILE_SIZE = 40;
+        const statusEl = document.getElementById("status");
+        const boardEl = document.getElementById("board");
+        const playersListEl = document.getElementById("players-list");
+
+        // Local fallback player in case backend is not running yet
+        let localPlayer = { id: "local", name: "Player", x: 0, y: 0 };
+
+        // 1. SIGNALR CONNECTION
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/hub")
+            .withAutomaticReconnect()
+            .build();
+
+        // 2. RECEIVE PLAYERS FROM SERVER
+        connection.on("UpdatePlayers", (players) => {
+            // console.log("Player positions from server:", players.map(p => ({ name: p.name || p.Name, x: p.x || p.X, y: p.y || p.Y })));
+            renderPlayers(players);
+        });
+
+        connection.start()
+            .then(() => {
+                statusEl.textContent = "Connected";
+                statusEl.style.color = "#2ecc71";
+            })
+            .catch((err) => {
+                statusEl.textContent = "Disconnected (Offline Demo)";
+                statusEl.style.color = "#f1c40f";
+                renderPlayers([localPlayer]);
+            });
+
+        // 3. KEYBOARD INPUT (MOVEMENT)
+        document.addEventListener("keydown", (event) => {
+            let dx = 0;
+            let dy = 0;
+
+            if (event.key === "ArrowUp" || event.key.toLowerCase() === "w") dy = -1;
+            else if (event.key === "ArrowDown" || event.key.toLowerCase() === "s") dy = 1;
+            else if (event.key === "ArrowLeft" || event.key.toLowerCase() === "a") dx = -1;
+            else if (event.key === "ArrowRight" || event.key.toLowerCase() === "d") dx = 1;
+
+            if (dx !== 0 || dy !== 0) {
+                event.preventDefault();
+
+                // If connected, send movement to backend Hub
+                if (connection.state === signalR.HubConnectionState.Connected) {
+
+                    console.log(`Sending move command: dx=${dx}, dy=${dy}`);
+
+                    connection.invoke("Move", dx, dy).catch(console.error);
+                } else {
+                    // Offline fallback movement
+                    localPlayer.x = Math.max(0, Math.min(9, localPlayer.x + dx));
+                    localPlayer.y = Math.max(0, Math.min(9, localPlayer.y + dy));
+                    renderPlayers([localPlayer]);
+                }
+            }
+        });
+
+        // 4. BASIC GRAPHICS RENDERING
+        function renderPlayers(players) {
+            boardEl.innerHTML = "";
+
+            playersListEl.innerHTML = "Players: " + players.map(p => p.name || p.Name).join(", ");
+
+            players.forEach(player => {
+                const x = player.x !== undefined ? player.x : player.X;
+                const y = player.y !== undefined ? player.y : player.Y;
+                const name = player.name || player.Name || "P";
+
+                const playerEl = document.createElement("div");
+                playerEl.classList.add("player");
+                playerEl.textContent = name.slice(-2); // short label inside circle
+                playerEl.title = name;
+
+                // Center player inside the tile
+                playerEl.style.left = (x * TILE_SIZE + 4) + "px";
+                playerEl.style.top = (y * TILE_SIZE + 4) + "px";
+
+                boardEl.appendChild(playerEl);
+            });
+        }
+    </script>
+</body>
+</html>
