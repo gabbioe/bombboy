@@ -3,6 +3,7 @@ using SignalRApp.Models;
 using SignalRApp.Models.GridEntities;
 using System;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json;
 
 namespace SignalRApp.Models;
 
@@ -182,7 +183,7 @@ public class Map
 
 
     //TODO (gal) padaryti kad gerai printintui klientui
-    public string ReturnMap()
+    public string ReturnMapToConsole()
     {
         string result = string.Empty;
 
@@ -196,6 +197,24 @@ public class Map
             result += "\n";
         }
         return result;
+    }
+
+    public string ReturnMapToJSon()
+    {
+        // Create a jagged array matching your grid dimensions
+        var gridArray = new object[Size_X][];
+
+        for (int i = 0; i < Size_X; i++)
+        {
+            gridArray[i] = new object[Size_Y];
+            for (int j = 0; j < Size_Y; j++)
+            {
+                gridArray[i][j] = MapGrid[i, j].ToString();
+            }
+        }
+
+        // Serialize to a JSON string
+        return JsonSerializer.Serialize(gridArray);
     }
 
 

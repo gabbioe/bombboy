@@ -25,10 +25,12 @@ var maap = new Map(7, 7,10);
 var p1 = new Player();
 p1.Id = "P1";
 maap.AddPlayer(p1);
-Console.WriteLine(maap.ReturnMap());
+Console.WriteLine(maap.ReturnMapToJSon());
 Console.WriteLine();
 maap.Move(1, 0, p1.Id);
-Console.WriteLine(maap.ReturnMap());
+Console.WriteLine(maap.ReturnMapToJSon());
+
+
 
 
 app.Run();
