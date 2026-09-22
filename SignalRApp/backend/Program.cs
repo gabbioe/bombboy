@@ -13,6 +13,9 @@ builder.Services.AddSignalR();
 
 builder.Services.AddSingleton<GameManager>();
 
+builder.Services.AddHostedService<GameLoopService>();
+
+
 var app = builder.Build();
 
 app.UseDefaultFiles();

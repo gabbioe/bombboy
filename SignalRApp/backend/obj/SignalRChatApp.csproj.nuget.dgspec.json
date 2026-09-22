@@ -1,27 +1,25 @@
 {
   "format": 1,
   "restore": {
-    "F:\\github\\bombboy\\SignalRApp\\backend\\SignalRChatApp.csproj": {}
+    "/Users/gabby/Documents/Objektinis projektavimas/SignalRApp/backend/SignalRChatApp.csproj": {}
   },
   "projects": {
-    "F:\\github\\bombboy\\SignalRApp\\backend\\SignalRChatApp.csproj": {
+    "/Users/gabby/Documents/Objektinis projektavimas/SignalRApp/backend/SignalRChatApp.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "F:\\github\\bombboy\\SignalRApp\\backend\\SignalRChatApp.csproj",
+        "projectUniqueName": "/Users/gabby/Documents/Objektinis projektavimas/SignalRApp/backend/SignalRChatApp.csproj",
         "projectName": "SignalRChatApp",
-        "projectPath": "F:\\github\\bombboy\\SignalRApp\\backend\\SignalRChatApp.csproj",
-        "packagesPath": "C:\\Users\\kompas\\.nuget\\packages\\",
-        "outputPath": "F:\\github\\bombboy\\SignalRApp\\backend\\obj\\",
+        "projectPath": "/Users/gabby/Documents/Objektinis projektavimas/SignalRApp/backend/SignalRChatApp.csproj",
+        "packagesPath": "/Users/gabby/.nuget/packages/",
+        "outputPath": "/Users/gabby/Documents/Objektinis projektavimas/SignalRApp/backend/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\kompas\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "/Users/gabby/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net10.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -41,7 +39,7 @@
           "auditLevel": "low",
           "auditMode": "all"
         },
-        "SdkAnalysisLevel": "10.0.400"
+        "SdkAnalysisLevel": "10.0.300"
       },
       "frameworks": {
         "net10.0": {
@@ -66,7 +64,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.401/PortableRuntimeIdentifierGraph.json",
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/10.0.301/PortableRuntimeIdentifierGraph.json",
           "packagesToPrune": {
             "Microsoft.AspNetCore": "(,10.0.32767]",
             "Microsoft.AspNetCore.Antiforgery": "(,10.0.32767]",
