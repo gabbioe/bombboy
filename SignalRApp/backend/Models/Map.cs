@@ -16,10 +16,10 @@ public class Map
 
 
     private Cell[,] MapGrid;
-    private Dictionary<string, (int x, int y)> PlayerLocations;
+    private Dictionary<string, (int x, int y)> PlayerLocations = new();
 
     private int PlayerCount = 0;
-    private Stack<int[]> AvailableStartingPositions;
+    private Stack<int[]> AvailableStartingPositions = new();
 
 
     public Map([Range(5, int.MaxValue)] int size_X, [Range(5, int.MaxValue)] int size_Y)
@@ -40,7 +40,7 @@ public class Map
 
         
         // kokios tikimybes kad bus sunaikinamas blokas is 10 (pvz 1 is 10 tai 10% kad laisva vieta bus blokas)
-        int BlockSpawnChance = 3;
+        int BlockSpawnChance = 10;
 
         //del borderiu +2 
         Size_X = size_X +2;
@@ -51,8 +51,8 @@ public class Map
         AvailableStartingPositions.Push([Size_X - 2, 1]);
         AvailableStartingPositions.Push([1, 1]);
 
-        //generateMapGood(BlockSpawnChance);
-        GenerateMapSimple();
+        generateMapGood(BlockSpawnChance);
+        //GenerateMapSimple();
     }
 
     private void generateMapGood(int BlockSpawnChance)
@@ -93,11 +93,11 @@ public class Map
         if (PlayerCount < 3)
         {
             PlayerCount++;
-            PlayerLocations[newPlayer.Id].x = playerLocation[0];
-            PlayerLocations[newPlayer.Id].y = playerLocation[0];
+            PlayerLocations[newPlayer.Id] = (playerLocation[0], playerLocation[0]);
+            return playerLocation;
         }
 
-        throw new ArgumentException($"Game Su");
+        throw new ArgumentException($"Game only supports up too 4 players");
     }
 
     //tik borderiai

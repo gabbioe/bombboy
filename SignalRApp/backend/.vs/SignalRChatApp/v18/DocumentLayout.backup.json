@@ -7,8 +7,20 @@
       "RelativeMoniker": "D:0:0:{8CAAE8EB-5B0C-35E3-C1DE-11DAE5940B4C}|SignalRChatApp.csproj|solutionrelative:models\\map.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{8CAAE8EB-5B0C-35E3-C1DE-11DAE5940B4C}|SignalRChatApp.csproj|f:\\github\\bombboy\\signalrapp\\backend\\models\\player.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{8CAAE8EB-5B0C-35E3-C1DE-11DAE5940B4C}|SignalRChatApp.csproj|solutionrelative:models\\player.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{8CAAE8EB-5B0C-35E3-C1DE-11DAE5940B4C}|SignalRChatApp.csproj|f:\\github\\bombboy\\signalrapp\\backend\\services\\gamemanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8CAAE8EB-5B0C-35E3-C1DE-11DAE5940B4C}|SignalRChatApp.csproj|solutionrelative:services\\gamemanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8CAAE8EB-5B0C-35E3-C1DE-11DAE5940B4C}|SignalRChatApp.csproj|f:\\github\\bombboy\\signalrapp\\backend\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8CAAE8EB-5B0C-35E3-C1DE-11DAE5940B4C}|SignalRChatApp.csproj|solutionrelative:program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8CAAE8EB-5B0C-35E3-C1DE-11DAE5940B4C}|SignalRChatApp.csproj|f:\\github\\bombboy\\signalrapp\\backend\\apphub.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8CAAE8EB-5B0C-35E3-C1DE-11DAE5940B4C}|SignalRChatApp.csproj|solutionrelative:apphub.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{8CAAE8EB-5B0C-35E3-C1DE-11DAE5940B4C}|SignalRChatApp.csproj|f:\\github\\bombboy\\signalrapp\\backend\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{8CAAE8EB-5B0C-35E3-C1DE-11DAE5940B4C}|SignalRChatApp.csproj|solutionrelative:appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{8CAAE8EB-5B0C-35E3-C1DE-11DAE5940B4C}|SignalRChatApp.csproj|f:\\github\\bombboy\\signalrapp\\backend\\models\\gridentities\\playercell.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -17,10 +29,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{8CAAE8EB-5B0C-35E3-C1DE-11DAE5940B4C}|SignalRChatApp.csproj|f:\\github\\bombboy\\signalrapp\\backend\\models\\gridentities\\cell.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{8CAAE8EB-5B0C-35E3-C1DE-11DAE5940B4C}|SignalRChatApp.csproj|solutionrelative:models\\gridentities\\cell.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{8CAAE8EB-5B0C-35E3-C1DE-11DAE5940B4C}|SignalRChatApp.csproj|f:\\github\\bombboy\\signalrapp\\backend\\services\\gamemanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{8CAAE8EB-5B0C-35E3-C1DE-11DAE5940B4C}|SignalRChatApp.csproj|solutionrelative:services\\gamemanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -40,7 +48,7 @@
               "RelativeDocumentMoniker": "Models\\Map.cs",
               "ToolTip": "F:\\github\\bombboy\\SignalRApp\\backend\\Models\\Map.cs",
               "RelativeToolTip": "Models\\Map.cs",
-              "ViewState": "AgIAAAgAAAAAAAAAAAAmwA4AAAAkAAAAAAAAAA==",
+              "ViewState": "AgIAAEwAAAAAAAAAAADwv2UAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-09-21T20:42:37.965Z",
               "IsPinned": true,
@@ -48,13 +56,13 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 1,
               "Title": "GameManager.cs",
               "DocumentMoniker": "F:\\github\\bombboy\\SignalRApp\\backend\\Services\\GameManager.cs",
               "RelativeDocumentMoniker": "Services\\GameManager.cs",
               "ToolTip": "F:\\github\\bombboy\\SignalRApp\\backend\\Services\\GameManager.cs",
               "RelativeToolTip": "Services\\GameManager.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAACQAAAAbAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-09-21T20:42:35.934Z",
               "IsPinned": true,
@@ -62,20 +70,46 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "Player.cs",
-              "DocumentMoniker": "F:\\github\\bombboy\\SignalRApp\\backend\\Models\\Player.cs",
-              "RelativeDocumentMoniker": "Models\\Player.cs",
-              "ToolTip": "F:\\github\\bombboy\\SignalRApp\\backend\\Models\\Player.cs",
-              "RelativeToolTip": "Models\\Player.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAMAAAABAAAAAAAAAA==",
+              "DocumentIndex": 3,
+              "Title": "AppHub.cs",
+              "DocumentMoniker": "F:\\github\\bombboy\\SignalRApp\\backend\\AppHub.cs",
+              "RelativeDocumentMoniker": "AppHub.cs",
+              "ToolTip": "F:\\github\\bombboy\\SignalRApp\\backend\\AppHub.cs",
+              "RelativeToolTip": "AppHub.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-09-22T07:44:44.519Z",
+              "WhenOpened": "2026-09-22T08:23:56.219Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 2,
+              "Title": "Program.cs",
+              "DocumentMoniker": "F:\\github\\bombboy\\SignalRApp\\backend\\Program.cs",
+              "RelativeDocumentMoniker": "Program.cs",
+              "ToolTip": "F:\\github\\bombboy\\SignalRApp\\backend\\Program.cs",
+              "RelativeToolTip": "Program.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABcAAAAZAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-22T08:22:59.168Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "F:\\github\\bombboy\\SignalRApp\\backend\\appsettings.json",
+              "RelativeDocumentMoniker": "appsettings.json",
+              "ToolTip": "F:\\github\\bombboy\\SignalRApp\\backend\\appsettings.json",
+              "RelativeToolTip": "appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2026-09-22T08:22:58.402Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
               "Title": "PlayerCell.cs",
               "DocumentMoniker": "F:\\github\\bombboy\\SignalRApp\\backend\\Models\\GridEntities\\PlayerCell.cs",
               "RelativeDocumentMoniker": "Models\\GridEntities\\PlayerCell.cs",
@@ -88,7 +122,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 6,
               "Title": "Cell.cs",
               "DocumentMoniker": "F:\\github\\bombboy\\SignalRApp\\backend\\Models\\GridEntities\\Cell.cs",
               "RelativeDocumentMoniker": "Models\\GridEntities\\Cell.cs",
