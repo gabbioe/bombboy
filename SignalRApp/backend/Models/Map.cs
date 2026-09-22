@@ -41,20 +41,14 @@ public class Map
         {
             throw new ArgumentException($"Both Size X ({size_X}) and Size Y ({size_Y}) must NOT be even.");
         }
-        
-
-
-
-        
-        
 
         //del borderiu +2 
         Size_X = size_X +2;
         Size_Y = size_Y +2;
 
         AvailableStartingPositions.Push([Size_X - 2, Size_Y - 2]);
-        AvailableStartingPositions.Push([1, Size_Y - 2]);
         AvailableStartingPositions.Push([Size_X - 2, 1]);
+        AvailableStartingPositions.Push([1, Size_Y - 2]);
         AvailableStartingPositions.Push([1, 1]);
 
         generateMapGood(BlockSpawnChance);
@@ -99,7 +93,7 @@ public class Map
         if (PlayerCount < 4)
         {
             PlayerCount++;
-            PlayerLocations[newPlayer.Id] = (playerLocation[0], playerLocation[0]);
+            PlayerLocations[newPlayer.Id] = (playerLocation[0], playerLocation[1]);
             MapGrid[playerLocation[0], playerLocation[1]] = new PlayerCell(newPlayer, newPlayer.Id);
             return playerLocation;
         }
@@ -148,14 +142,18 @@ public class Map
     {
         if(PlayerLocations.TryGetValue(PlayerId, out var player) )
         {
+            //Console.WriteLine($"Gavu player id = {PlayerId}, player yra : {player}");
             if (Math.Abs(dx) + Math.Abs(dy) < 2){
                 int x = player.x;
                 int y = player.y;
-                if (checkIfCanMove(x + dx, y + dy))
+                int newx = x + dx;
+                int newy = y + dy;
+                if (checkIfCanMove(newx, newy))
                 {
                     player.x += dx;
                     player.y += dy;
-                    MapGrid[x + dx, y + dy] = MapGrid[x, y];
+                    PlayerLocations[PlayerId] = player;
+                    MapGrid[newx, newy] = MapGrid[x, y];
                     MapGrid[x, y] = new Air();
                 }
                 return false;
