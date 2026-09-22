@@ -51,8 +51,8 @@ public class Map
         Size_X = size_X +2;
         Size_Y = size_Y +2;
 
-        AvailableStartingPositions.Push([Size_X - 1, Size_Y - 1]);
-        AvailableStartingPositions.Push([1, Size_Y - 1]);
+        AvailableStartingPositions.Push([Size_X - 2, Size_Y - 2]);
+        AvailableStartingPositions.Push([1, Size_Y - 2]);
         AvailableStartingPositions.Push([Size_X - 2, 1]);
         AvailableStartingPositions.Push([1, 1]);
 
@@ -95,10 +95,11 @@ public class Map
     public int[] AddPlayer(Player newPlayer)
     {
         int[] playerLocation = AvailableStartingPositions.Pop();
-        if (PlayerCount < 3)
+        if (PlayerCount < 4)
         {
             PlayerCount++;
             PlayerLocations[newPlayer.Id] = (playerLocation[0], playerLocation[0]);
+            MapGrid[playerLocation[0], playerLocation[1]] = new PlayerCell(newPlayer, newPlayer.Id);
             return playerLocation;
         }
 
@@ -149,9 +150,11 @@ public class Map
             if (Math.Abs(dx) + Math.Abs(dy) < 2){
                 int x = player.x;
                 int y = player.y;
-                if (checkIfCanMove(x + dx, y + dx))
+                if (checkIfCanMove(x + dx, y + dy))
                 {
-                    MapGrid[x + dx, y + dx] = MapGrid[x, y];
+                    player.x += dx;
+                    player.y += dy;
+                    MapGrid[x + dx, y + dy] = MapGrid[x, y];
                     MapGrid[x, y] = new Air();
                 }
                 return false;
@@ -187,8 +190,8 @@ public class Map
         {
             for (int j = 0; j < Size_Y; j++)
             {
-                //Console.WriteLine($"i == {i} j == {j} Type == {MapGrid[i, j].Type}");
-                result += MapGrid[i, j];
+               //Console.WriteLine($"i == {i} j == {j} Type == {MapGrid[i, j].Type}");
+               result += MapGrid[i, j];
             }
             result += "\n";
         }

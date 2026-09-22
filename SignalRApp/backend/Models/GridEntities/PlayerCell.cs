@@ -35,7 +35,8 @@ public class PlayerCell : Cell
 
     public override string? ToString()
     {
-        return Id;
+        //return Id;
+        return "P";
     }
 }
 
