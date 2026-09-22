@@ -4,6 +4,12 @@
 *.userossc
 *.sln.docstates
 
+SignalRApp/backend/.vs/
+*.user
+*.userossc
+*.sln.docstates
+
+
 # Build outputs and temporary execution binaries
 [Bb]in/
 [Oo]bj/
