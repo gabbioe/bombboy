@@ -16,6 +16,11 @@ public class Map
 
 
     private Cell[,] MapGrid;
+    private Dictionary<string, (int x, int y)> PlayerLocations;
+
+    private int PlayerCount = 0;
+    private Stack<int[]> AvailableStartingPositions;
+
 
     public Map([Range(5, int.MaxValue)] int size_X, [Range(5, int.MaxValue)] int size_Y)
     {
@@ -33,14 +38,27 @@ public class Map
 
 
 
-        Random rand = new Random();
+        
         // kokios tikimybes kad bus sunaikinamas blokas is 10 (pvz 1 is 10 tai 10% kad laisva vieta bus blokas)
-        int BlockSpawnChance = 10;
+        int BlockSpawnChance = 3;
 
         //del borderiu +2 
         Size_X = size_X +2;
         Size_Y = size_Y +2;
-        MapGrid = new Cell[Size_X , Size_Y];
+
+        AvailableStartingPositions.Push([Size_X - 1, Size_Y - 1]);
+        AvailableStartingPositions.Push([1, Size_Y - 1]);
+        AvailableStartingPositions.Push([Size_X - 2, 1]);
+        AvailableStartingPositions.Push([1, 1]);
+
+        //generateMapGood(BlockSpawnChance);
+        GenerateMapSimple();
+    }
+
+    private void generateMapGood(int BlockSpawnChance)
+    {
+        Random rand = new Random();
+        MapGrid = new Cell[Size_X, Size_Y];
         for (int i = 0; i < Size_X; i++)
         {
             for (int j = 0; j < Size_Y; j++)
@@ -68,15 +86,90 @@ public class Map
         }
     }
 
-    public bool CheckForBlock(int x, int y)
+
+    public int[] AddPlayer(Player newPlayer)
     {
-        return MapGrid[x+1,y+1].CanWalk();
+        int[] playerLocation = AvailableStartingPositions.Pop();
+        if (PlayerCount < 3)
+        {
+            PlayerCount++;
+            PlayerLocations[newPlayer.Id].x = playerLocation[0];
+            PlayerLocations[newPlayer.Id].y = playerLocation[0];
+        }
+
+        throw new ArgumentException($"Game Su");
     }
 
+    //tik borderiai
+    private void GenerateMapSimple()
+    {
+        MapGrid = new Cell[Size_X, Size_Y];
+        for (int i = 0; i < Size_X; i++)
+        {
+            for (int j = 0; j < Size_Y; j++)
+            {
+                //borderiai
+                if (i == 0 || i == Size_X - 1 || j == 0 || j == Size_Y - 1)
+                    MapGrid[i, j] = new Block(false);
+                else
+                    MapGrid[i, j] = new Air("Air");
+                
+            }
+        }
+    }
+
+
+    //proly nebereiks (
+    public bool CheckIfCanMove(int x, int y)
+    {
+        return MapGrid[x,y].CanWalk();
+    }
+
+    private bool checkIfCanMove(int x, int y)
+    {
+        return MapGrid[x, y].CanWalk();
+    }
+
+    /// <summary>
+    /// moves the player on the map
+    /// </summary>
+    /// <param name="dx"> change in possition</param>
+    /// <param name="dy"> change in possition</param>
+    /// <param name="PlayerId"></param>
+    /// <returns>True if player did move, False if player did not move</returns>
+    public bool Move(int dx, int dy, string PlayerId)
+    {
+        if(PlayerLocations.TryGetValue(PlayerId, out var player) )
+        {
+            if (Math.Abs(dx) + Math.Abs(dy) < 2){
+                int x = player.x;
+                int y = player.y;
+                if (checkIfCanMove(x + dx, y + dx))
+                {
+                    MapGrid[x + dx, y + dx] = MapGrid[x, y];
+                    MapGrid[x, y] = new Air();
+                }
+                return false;
+            }
+            throw new ArgumentException($"Player can only move in one direction at once, either dx({dx}) or dy({dy}) MUST be zero");
+        }
+        throw new ArgumentException($"Player with id [{PlayerId}] Doesn't exist");
+        return false;
+    }
+
+    //external damage, gal nebereiks Jei game logika mapse :D
     public void DoDamange(int x, int y)
     {
-        if (MapGrid[x + 1, y + 1].DoDamage() != null)
-            MapGrid[x + 1, y + 1] = MapGrid[x + 1, y + 1].DoDamage();
+        var result = MapGrid[x + 1, y + 1].DoDamage();
+        if (result != null)
+            MapGrid[x + 1, y + 1] = result;
+    }
+
+    private void doDamange(int x, int y)
+    {
+        var result = MapGrid[x, y].DoDamage();
+        if (result != null)
+            MapGrid[x, y] = result;
     }
 
 
