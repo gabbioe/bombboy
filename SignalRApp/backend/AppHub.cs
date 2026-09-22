@@ -38,7 +38,7 @@ public class AppHub : Hub
                                                                                                                      
         await base.OnDisconnectedAsync(exception);                                                               
     }        
-    public async Task Move(float dx, float dy)
+    public async Task Move(int dx, int dy)
     {
         _gameManager.MovePlayer(Context.ConnectionId, dx, dy);
         await Clients.All.SendAsync("UpdatePlayers", _gameManager.GetAllPlayers());
