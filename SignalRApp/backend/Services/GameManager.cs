@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 
 using SignalRApp.Models;
 
@@ -28,8 +28,11 @@ public class GameManager
 
     public bool RemovePlayer(string connectionId, out Player? player)
     {
+        _map.RemovePlayer(connectionId);
         return _players.TryRemove(connectionId, out player);
     }
+
+    public string GetMap() => _map.ReturnMapToJSon();
 
     public void MovePlayer(string connectionId, int dx, int dy)
     {

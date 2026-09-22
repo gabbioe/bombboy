@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using SignalRApp.Models;
 using SignalRApp.Models.GridEntities;
 using System;
@@ -89,9 +89,9 @@ public class Map
 
     public int[] AddPlayer(Player newPlayer)
     {
-        int[] playerLocation = AvailableStartingPositions.Pop();
-        if (PlayerCount < 4)
+        if (PlayerCount < 4 && AvailableStartingPositions.Count > 0)
         {
+            int[] playerLocation = AvailableStartingPositions.Pop();
             PlayerCount++;
             PlayerLocations[newPlayer.Id] = (playerLocation[0], playerLocation[1]);
             MapGrid[playerLocation[0], playerLocation[1]] = new PlayerCell(newPlayer, newPlayer.Id);
@@ -99,6 +99,19 @@ public class Map
         }
 
         throw new ArgumentException($"Game only supports up too 4 players");
+    }
+
+    public bool RemovePlayer(string playerId)
+    {
+        if (PlayerLocations.TryGetValue(playerId, out var player))
+        {
+            PlayerLocations.Remove(playerId);
+            MapGrid[player.x, player.y] = new Air();
+            AvailableStartingPositions.Push(new int[] { player.x, player.y });
+            PlayerCount = Math.Max(0, PlayerCount - 1);
+            return true;
+        }
+        return false;
     }
 
     //tik borderiai
@@ -155,6 +168,7 @@ public class Map
                     PlayerLocations[PlayerId] = player;
                     MapGrid[newx, newy] = MapGrid[x, y];
                     MapGrid[x, y] = new Air();
+                    return true;
                 }
                 return false;
             }

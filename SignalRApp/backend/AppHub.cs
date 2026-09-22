@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using SignalRApp.Models;
 using SignalRApp.Services;
@@ -21,6 +21,8 @@ public class AppHub : Hub
     {
        var newPlayer = _gameManager.AddPlayer(Context.ConnectionId);
 
+       await Clients.Caller.SendAsync("ReceiveMap", _gameManager.GetMap());
+       await Clients.Caller.SendAsync("ReceivePlayerId", Context.ConnectionId);
        await Clients.All.SendAsync("UpdatePlayers", _gameManager.GetAllPlayers());
        await base.OnConnectedAsync();
     }
@@ -42,5 +44,10 @@ public class AppHub : Hub
     {
         _gameManager.MovePlayer(Context.ConnectionId, dx, dy);
         await Clients.All.SendAsync("UpdatePlayers", _gameManager.GetAllPlayers());
+    }
+
+    public string GetMap()
+    {
+        return _gameManager.GetMap();
     }
 }
