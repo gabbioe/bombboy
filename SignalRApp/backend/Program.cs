@@ -44,9 +44,9 @@ maap.Move(0, 1, p3.Id);
 maap.Move(0, 1, p3.Id);
 maap.Move(0, -1, p4.Id);
 maap.Move(0, -1, p4.Id);
-*/
-Console.WriteLine(maap.ReturnMapToConsole());
 
+Console.WriteLine(maap.ReturnMapToConsole());
+*/
 
 
 

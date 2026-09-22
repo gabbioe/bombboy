@@ -7,16 +7,16 @@
       "RelativeMoniker": "D:0:0:{8CAAE8EB-5B0C-35E3-C1DE-11DAE5940B4C}|SignalRChatApp.csproj|solutionrelative:program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
+      "AbsoluteMoniker": "D:0:0:{8CAAE8EB-5B0C-35E3-C1DE-11DAE5940B4C}|SignalRChatApp.csproj|f:\\github\\bombboy\\signalrapp\\backend\\services\\gamemanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{8CAAE8EB-5B0C-35E3-C1DE-11DAE5940B4C}|SignalRChatApp.csproj|solutionrelative:services\\gamemanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{8CAAE8EB-5B0C-35E3-C1DE-11DAE5940B4C}|SignalRChatApp.csproj|f:\\github\\bombboy\\signalrapp\\backend\\models\\map.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{8CAAE8EB-5B0C-35E3-C1DE-11DAE5940B4C}|SignalRChatApp.csproj|solutionrelative:models\\map.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{8CAAE8EB-5B0C-35E3-C1DE-11DAE5940B4C}|SignalRChatApp.csproj|f:\\github\\bombboy\\signalrapp\\backend\\apphub.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{8CAAE8EB-5B0C-35E3-C1DE-11DAE5940B4C}|SignalRChatApp.csproj|solutionrelative:apphub.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{8CAAE8EB-5B0C-35E3-C1DE-11DAE5940B4C}|SignalRChatApp.csproj|f:\\github\\bombboy\\signalrapp\\backend\\services\\gamemanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{8CAAE8EB-5B0C-35E3-C1DE-11DAE5940B4C}|SignalRChatApp.csproj|solutionrelative:services\\gamemanager.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{8CAAE8EB-5B0C-35E3-C1DE-11DAE5940B4C}|SignalRChatApp.csproj|f:\\github\\bombboy\\signalrapp\\backend\\models\\player.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
@@ -46,13 +46,13 @@
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 2,
               "Title": "Map.cs",
               "DocumentMoniker": "F:\\github\\bombboy\\SignalRApp\\backend\\Models\\Map.cs",
               "RelativeDocumentMoniker": "Models\\Map.cs",
               "ToolTip": "F:\\github\\bombboy\\SignalRApp\\backend\\Models\\Map.cs",
               "RelativeToolTip": "Models\\Map.cs",
-              "ViewState": "AgIAAJEAAAAAAAAAAAAkwJsAAAA4AAAAAAAAAA==",
+              "ViewState": "AgIAAJEAAAAAAAAAAAAkwKwAAAAFAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-09-21T20:42:37.965Z",
               "IsPinned": true,
@@ -60,13 +60,13 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 1,
               "Title": "GameManager.cs",
               "DocumentMoniker": "F:\\github\\bombboy\\SignalRApp\\backend\\Services\\GameManager.cs",
               "RelativeDocumentMoniker": "Services\\GameManager.cs",
               "ToolTip": "F:\\github\\bombboy\\SignalRApp\\backend\\Services\\GameManager.cs",
               "RelativeToolTip": "Services\\GameManager.cs",
-              "ViewState": "AgIAAAYAAAAAAAAAAAAAABcAAAAoAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-09-21T20:42:35.934Z",
               "IsPinned": true,
@@ -80,7 +80,7 @@
               "RelativeDocumentMoniker": "Program.cs",
               "ToolTip": "F:\\github\\bombboy\\SignalRApp\\backend\\Program.cs",
               "RelativeToolTip": "Program.cs",
-              "ViewState": "AgIAAAYAAAAAAAAAAAAAAC0AAAAYAAAAAAAAAA==",
+              "ViewState": "AgIAAAwAAAAAAAAAAAAAADEAAAAYAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-09-22T08:22:59.168Z",
               "EditorCaption": ""
@@ -100,7 +100,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 3,
               "Title": "AppHub.cs",
               "DocumentMoniker": "F:\\github\\bombboy\\SignalRApp\\backend\\AppHub.cs",
               "RelativeDocumentMoniker": "AppHub.cs",
