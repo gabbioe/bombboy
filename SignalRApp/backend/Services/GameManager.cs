@@ -36,6 +36,7 @@ public class GameManager
         {
             player.X += dx;
             player.Y += dy;
+            Console.WriteLine($"Player {player.Name} moved to ({player.X}, {player.Y})");
         }
     }
 
