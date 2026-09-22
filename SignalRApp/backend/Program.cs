@@ -21,7 +21,7 @@ app.UseStaticFiles();
 
 app.MapHub<AppHub>("/hub");
 
-var maap = new Map(7, 7);
+var maap = new Map(7, 7,10);
 maap.DoDamange(2, 2);
 Console.WriteLine(maap.ReturnMap());
 

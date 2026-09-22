@@ -21,8 +21,14 @@ public class Map
     private int PlayerCount = 0;
     private Stack<int[]> AvailableStartingPositions = new();
 
-
-    public Map([Range(5, int.MaxValue)] int size_X, [Range(5, int.MaxValue)] int size_Y)
+    /// <summary>
+    /// Generates the map
+    /// </summary>
+    /// <param name="size_X"></param>
+    /// <param name="size_Y"></param>
+    /// <param name="BlockSpawnChance"> kokios tikimybes kad bus sunaikinamas blokas is 10 (pvz 1 is 10 tai 10% kad laisva vieta bus blokas)</param>
+    /// <exception cref="ArgumentException"></exception>
+    public Map([Range(5, int.MaxValue)] int size_X, [Range(5, int.MaxValue)] int size_Y, int BlockSpawnChance )
     {
 
         if (size_X < 5 || size_Y < 5)
@@ -39,8 +45,7 @@ public class Map
 
 
         
-        // kokios tikimybes kad bus sunaikinamas blokas is 10 (pvz 1 is 10 tai 10% kad laisva vieta bus blokas)
-        int BlockSpawnChance = 10;
+        
 
         //del borderiu +2 
         Size_X = size_X +2;
