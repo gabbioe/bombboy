@@ -56,6 +56,8 @@ public class Map
 
     private void generateMapGood(int BlockSpawnChance)
     {
+        Console.WriteLine("Generuoju mapa!");
+
         Random rand = new Random();
         MapTileGrid = new Tile[Size_X, Size_Y];
         for (int i = 0; i < Size_X; i++)
@@ -85,13 +87,8 @@ public class Map
         }
     }
 
-    //proly nebereiks (
+    
     public bool CheckIfCanMove(int x, int y)
-    {
-        return checkIfCanMove(x + 1, y + 1);
-    }
-
-    private bool checkIfCanMove(int x, int y)
     {
         return MapTileGrid[x, y].CanWalk();
     }

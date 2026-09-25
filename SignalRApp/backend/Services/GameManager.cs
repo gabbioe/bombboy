@@ -1,4 +1,5 @@
 using SignalRApp.Models;
+using SignalRApp.Models.TileFactories;
 using System.Collections.Concurrent;
 
 namespace SignalRApp.Services;
@@ -25,6 +26,12 @@ public class GameManager
         return player;
     }
 
+    public void GenerateMap()
+    {
+        _Match.GenerateMap(7,7,50,new BasicMapTileFactory());
+        _Match.PrintMap();
+    }
+
     public bool RemovePlayer(string connectionId, out Player? player)
     {
         _Match.RemovePlayer(connectionId);
@@ -39,13 +46,7 @@ public class GameManager
         {
             bool didMove = _Match.Move(dx, dy, connectionId);
 
-            if (didMove)
-            {
-                player.X += dx;
-                player.Y += dy;
-            }
-            
-            Console.WriteLine($"Player {player.Name} moved to ({player.X}, {player.Y})");
+            Console.WriteLine($"Player {player.Name} moved to ({player.X}, {player.Y}), player has moved:{didMove}");
         }
     }
 

@@ -24,7 +24,7 @@ app.UseDefaultFiles();
 app.UseStaticFiles();
 
 app.MapHub<AppHub>("/hub");
-
+/*
 Match DaMatch = new Match();
 DaMatch.GenerateMap(7, 7, 40, new BasicMapTileFactory());
 var p1 = new Player();
@@ -47,7 +47,7 @@ DaMatch.Move(0, -1, p1.Id);
 Console.WriteLine();
 Console.WriteLine(DaMatch.GetFullGameMapJson(false));
 Console.WriteLine();
-
+*/
 
 
 app.Run();

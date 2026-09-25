@@ -91,7 +91,7 @@
         /* Map Grid layer */
         #map-grid {
             position: relative;
-            display: grid;
+            z-index: 1;
         }
 
         /* Tile Styles */
@@ -141,7 +141,28 @@
             font-size: 18px;
         }
 
-        /* Player Layer */
+        /* Entity Layer (Z-Index above Map Tile Layer) */
+        #entities-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .entity {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        /* Player Layer (Z-Index above Entity Layer) */
         #players-layer {
             position: absolute;
             top: 0;
@@ -149,6 +170,7 @@
             width: 100%;
             height: 100%;
             pointer-events: none;
+            z-index: 3;
         }
 
         .player {
@@ -165,7 +187,6 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
             transition: left 0.08s linear, top 0.08s linear;
             border: 2px solid #fff;
-            z-index: 10;
         }
 
         /* Local Player Highlight */
@@ -247,6 +268,7 @@
     <!-- Game Board -->
     <div id="game-container">
         <div id="map-grid"></div>
+        <div id="entities-layer"></div>
         <div id="players-layer"></div>
     </div>
 
@@ -277,12 +299,13 @@
         const playerCountEl = document.getElementById("player-count");
         const gameContainer = document.getElementById("game-container");
         const mapGridEl = document.getElementById("map-grid");
+        const entitiesLayerEl = document.getElementById("entities-layer");
         const playersLayerEl = document.getElementById("players-layer");
 
         let myConnectionId = null;
-        let mapData = null;
+        let gameState = null;
         let lastMoveTime = 0;
-        const MOVE_COOLDOWN_MS = 100; // Small delay to avoid input flooding
+        const MOVE_COOLDOWN_MS = 100;
 
         // 1. SIGNALR CONNECTION
         const connection = new signalR.HubConnectionBuilder()
@@ -296,24 +319,43 @@
             console.log("Assigned Connection ID:", id);
         });
 
-        // 3. RECEIVE MAP DATA
-        connection.on("ReceiveMap", (rawMap) => {
+        // 3. RECEIVE GAME STATE / MAP DATA
+        connection.on("ReceiveMap", (rawData) => {
+            handleGameStateUpdate(rawData);
+        });
+
+        // 4. RECEIVE PLAYERS LIST / TICK UPDATE
+        connection.on("UpdatePlayers", (data) => {
+            handleGameStateUpdate(data);
+        });
+
+        connection.on("Gametick", (data) => {
+            handleGameStateUpdate(data);
+        });
+
+        function handleGameStateUpdate(rawData) {
             try {
-                mapData = typeof rawMap === "string" ? JSON.parse(rawMap) : rawMap;
-                renderMap(mapData);
+                const parsed = typeof rawData === "string" ? JSON.parse(rawData) : rawData;
+                
+                // If standard object with layers is received
+                if (parsed && (parsed.MapLayer || parsed.EntityLayer || parsed.PlayerLayer)) {
+                    gameState = parsed;
+                    if (gameState.MapLayer) renderMap(gameState.MapLayer);
+                    if (gameState.EntityLayer) renderEntities(gameState.EntityLayer);
+                    if (gameState.PlayerLayer) renderPlayers(gameState.PlayerLayer);
+                } 
+                // Fallback handling if receiving raw Map array or raw Player array
+                else if (Array.isArray(parsed)) {
+                    if (Array.isArray(parsed[0])) {
+                        renderMap(parsed);
+                    } else {
+                        renderPlayers(parsed);
+                    }
+                }
             } catch (err) {
-                console.error("Failed to parse map data:", err);
+                console.error("Failed to parse server payload:", err);
             }
-        });
-
-        // 4. RECEIVE PLAYERS LIST (from UpdatePlayers or Gametick)
-        connection.on("UpdatePlayers", (players) => {
-            renderPlayers(players);
-        });
-
-        connection.on("Gametick", (players) => {
-            renderPlayers(players);
-        });
+        }
 
         // 5. CONNECT TO SERVER
         connection.start()
@@ -323,17 +365,11 @@
                 if (!myConnectionId && connection.connectionId) {
                     myConnectionId = connection.connectionId;
                 }
-                // Request map in case ReceiveMap wasn't received during handshake
-                if (!mapData) {
-                    connection.invoke("GetMap")
-                        .then(raw => {
-                            if (raw) {
-                                mapData = typeof raw === "string" ? JSON.parse(raw) : raw;
-                                renderMap(mapData);
-                            }
-                        })
-                        .catch(err => console.log("GetMap invoke optional:", err));
-                }
+                connection.invoke("GetMap")
+                    .then(raw => {
+                        if (raw) handleGameStateUpdate(raw);
+                    })
+                    .catch(err => console.log("GetMap invoke optional:", err));
             })
             .catch(err => {
                 console.error("SignalR Connection Error:", err);
@@ -353,20 +389,20 @@
             if (connection.connectionId) myConnectionId = connection.connectionId;
         });
 
-        // 6. RENDER MAP
-        function renderMap(grid) {
-            if (!grid || !grid.length) return;
+        // 6. RENDER MAP (Tiles)
+        function renderMap(mapLayer) {
+            if (!mapLayer || !mapLayer.length) return;
 
             mapGridEl.innerHTML = "";
-            const sizeX = grid.length;
-            const sizeY = grid[0].length;
+            const sizeX = mapLayer.length;
+            const sizeY = mapLayer[0].length;
 
             gameContainer.style.width = (sizeX * TILE_SIZE) + "px";
             gameContainer.style.height = (sizeY * TILE_SIZE) + "px";
 
             for (let x = 0; x < sizeX; x++) {
                 for (let y = 0; y < sizeY; y++) {
-                    const tileType = grid[x][y];
+                    const tileType = mapLayer[x][y];
                     const tileEl = document.createElement("div");
                     tileEl.className = "tile";
                     tileEl.style.left = (x * TILE_SIZE) + "px";
@@ -387,21 +423,89 @@
             }
         }
 
-        // 7. RENDER PLAYERS
-        function renderPlayers(players) {
-            if (!Array.isArray(players)) return;
+        // 7. RENDER ENTITIES (Bombs, items, etc. between Map & Players)
+        function renderEntities(entityLayer) {
+            entitiesLayerEl.innerHTML = "";
+            if (!entityLayer) return;
 
+            // Handle Array of Entities
+            if (Array.isArray(entityLayer)) {
+                entityLayer.forEach(entity => {
+                    const x = entity.x !== undefined ? entity.x : entity.X;
+                    const y = entity.y !== undefined ? entity.y : entity.Y;
+                    const icon = entity.icon || entity.Type || "💣";
+
+                    if (x !== undefined && y !== undefined) {
+                        createEntityElement(x, y, icon);
+                    }
+                });
+            } 
+            // Handle Key-Value Object format (e.g. {"2,1": {Id: "Bomb"}})
+            else if (typeof entityLayer === "object") {
+                Object.keys(entityLayer).forEach(key => {
+                    const coords = key.split(",").map(Number);
+                    if (coords.length === 2) {
+                        const [x, y] = coords;
+                        const item = entityLayer[key];
+                        const icon = typeof item === "string" ? item : (item.Icon || item.Type || "💣");
+                        createEntityElement(x, y, icon);
+                    }
+                });
+            }
+        }
+
+        function createEntityElement(x, y, symbol) {
+            const entEl = document.createElement("div");
+            entEl.className = "entity";
+            entEl.style.left = (x * TILE_SIZE) + "px";
+            entEl.style.top = (y * TILE_SIZE) + "px";
+            entEl.textContent = symbol;
+            entitiesLayerEl.appendChild(entEl);
+        }
+
+        // 8. RENDER PLAYERS
+        function renderPlayers(playerLayer) {
             playersLayerEl.innerHTML = "";
-            playerCountEl.textContent = players.length;
+            if (!playerLayer) return;
 
+            let playerList = [];
+
+            // Parse array vs dictionary-style PlayerLayer (e.g., [{"2,1": {"Id":"P1", "Direction":"right"}}])
+            if (Array.isArray(playerLayer)) {
+                playerLayer.forEach((item, idx) => {
+                    if (item.x !== undefined || item.X !== undefined) {
+                        playerList.push(item);
+                    } else if (typeof item === "object") {
+                        Object.keys(item).forEach(coordKey => {
+                            const [x, y] = coordKey.split(",").map(Number);
+                            playerList.push({
+                                x: x,
+                                y: y,
+                                ...item[coordKey]
+                            });
+                        });
+                    }
+                });
+            } else if (typeof playerLayer === "object") {
+                Object.keys(playerLayer).forEach(coordKey => {
+                    const [x, y] = coordKey.split(",").map(Number);
+                    playerList.push({
+                        x: x,
+                        y: y,
+                        ...playerLayer[coordKey]
+                    });
+                });
+            }
+
+            playerCountEl.textContent = playerList.length;
             let foundMe = false;
 
-            players.forEach((player, index) => {
-                const id = player.id || player.Id;
-                const name = player.name || player.Name || `P${index + 1}`;
+            playerList.forEach((player, index) => {
+                const id = player.id || player.Id || `P${index + 1}`;
+                const name = player.name || player.Name || id;
                 const x = player.x !== undefined ? player.x : player.X;
                 const y = player.y !== undefined ? player.y : player.Y;
-                const isMe = (myConnectionId && id === myConnectionId) || (!foundMe && players.length === 1);
+                const isMe = (myConnectionId && id === myConnectionId) || (!foundMe && playerList.length === 1);
 
                 if (isMe) {
                     foundMe = true;
@@ -421,7 +525,7 @@
             });
         }
 
-        // 8. SEND MOVEMENT
+        // 9. SEND MOVEMENT
         function sendMove(dx, dy) {
             const now = Date.now();
             if (now - lastMoveTime < MOVE_COOLDOWN_MS) return;
@@ -434,7 +538,7 @@
             }
         }
 
-        // 9. BOMB ACTION
+        // 10. BOMB ACTION
         function placeBomb() {
             if (connection.state === signalR.HubConnectionState.Connected) {
                 connection.invoke("PlaceBomb").catch(err => {
@@ -443,7 +547,7 @@
             }
         }
 
-        // 10. KEYBOARD LISTENER
+        // 11. KEYBOARD LISTENER
         window.addEventListener("keydown", (event) => {
             if (event.code === "Space" || event.key === " ") {
                 event.preventDefault();

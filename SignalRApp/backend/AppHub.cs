@@ -16,6 +16,8 @@ public class AppHub : Hub
 
 
         _gameManager = gameManager;
+        //aparently sitas runnina ne viena karta :D
+       // _gameManager.GenerateMap();
     }
     public override async Task OnConnectedAsync()
     {
