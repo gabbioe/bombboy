@@ -1,12 +1,14 @@
-﻿using System;
+﻿using SignalRApp.Models.GridEntities;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace SignalRApp.Models.GridEntities;
 
-public class Blast : Cell
+public  class Bomb : Entity
 {
-    public Blast (string type = "Blast") : base(type)
+
+    public Bomb(int layer = 0, string type = "Bomb") : base(layer, type)
     {
 
     }
@@ -16,7 +18,7 @@ public class Blast : Cell
         throw new NotImplementedException();
     }
 
-    public override Cell? DoDamage()
+    public override bool DoDamage()
     {
         throw new NotImplementedException();
     }

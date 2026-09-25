@@ -21,7 +21,7 @@ public class AppHub : Hub
     {
        var newPlayer = _gameManager.AddPlayer(Context.ConnectionId);
 
-       await Clients.Caller.SendAsync("ReceiveMap", _gameManager.GetMap());
+       await Clients.Caller.SendAsync("ReceiveMap", _gameManager.GetFullMap());
        await Clients.Caller.SendAsync("ReceivePlayerId", Context.ConnectionId);
        await Clients.All.SendAsync("UpdatePlayers", _gameManager.GetAllPlayers());
        await base.OnConnectedAsync();
@@ -48,6 +48,6 @@ public class AppHub : Hub
 
     public string GetMap()
     {
-        return _gameManager.GetMap();
+        return _gameManager.GetFullMap();
     }
 }

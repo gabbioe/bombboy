@@ -1,6 +1,5 @@
-using System.Collections.Concurrent;
-
 using SignalRApp.Models;
+using System.Collections.Concurrent;
 
 namespace SignalRApp.Services;
 
@@ -8,7 +7,7 @@ public class GameManager
 {
     private readonly ConcurrentDictionary<string, Player> _players = new();
 
-    private readonly Map _map = new Map(11, 11, 4);
+    private readonly Match _Match = new Match();
 
     public Player AddPlayer(string connectionId)
     {
@@ -18,7 +17,7 @@ public class GameManager
             Name = $"player-{connectionId[..4]}"
         };
 
-        int[] startPos = _map.AddPlayer(player);
+        int[] startPos = _Match.AddPlayer(player);
         player.X = startPos[0];
         player.Y = startPos[1];
 
@@ -28,17 +27,17 @@ public class GameManager
 
     public bool RemovePlayer(string connectionId, out Player? player)
     {
-        _map.RemovePlayer(connectionId);
+        _Match.RemovePlayer(connectionId);
         return _players.TryRemove(connectionId, out player);
     }
 
-    public string GetMap() => _map.ReturnMapToJSon();
+    public string GetFullMap() => _Match.GetFullGameMapJson();
 
     public void MovePlayer(string connectionId, int dx, int dy)
     {
         if(_players.TryGetValue(connectionId, out var player) && player.isAlive)
         {
-            bool didMove = _map.Move(dx, dy, connectionId);
+            bool didMove = _Match.Move(dx, dy, connectionId);
 
             if (didMove)
             {

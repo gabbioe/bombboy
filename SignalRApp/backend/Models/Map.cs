@@ -1,13 +1,15 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.SignalR;
 using SignalRApp.Models;
 using SignalRApp.Models.GridEntities;
+using SignalRApp.Models.TileFactories;
+using SignalRApp.Models.Tiles;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
 
+
 namespace SignalRApp.Models;
-
-
 
 public class Map
 {
@@ -15,12 +17,11 @@ public class Map
 
     private int Size_Y { get; set; }
 
+    private Tile[,] MapTileGrid;
 
-    private Cell[,] MapGrid;
-    private Dictionary<string, (int x, int y)> PlayerLocations = new();
+    private IMapTileFactory tileFactory;
 
-    private int PlayerCount = 0;
-    private Stack<int[]> AvailableStartingPositions = new();
+    
 
     /// <summary>
     /// Generates the map
@@ -29,8 +30,9 @@ public class Map
     /// <param name="size_Y"></param>
     /// <param name="BlockSpawnChance"> kokios tikimybes kad bus sunaikinamas blokas is 10 (pvz 1 is 10 tai 10% kad laisva vieta bus blokas)</param>
     /// <exception cref="ArgumentException"></exception>
-    public Map([Range(5, int.MaxValue)] int size_X, [Range(5, int.MaxValue)] int size_Y, int BlockSpawnChance )
+    public Map(int size_X, int size_Y, int BlockSpawnChance, IMapTileFactory factory)
     {
+        tileFactory = factory;
 
         if (size_X < 5 || size_Y < 5)
         {
@@ -45,12 +47,9 @@ public class Map
         //del borderiu +2 
         Size_X = size_X +2;
         Size_Y = size_Y +2;
-
-        AvailableStartingPositions.Push([Size_X - 2, Size_Y - 2]);
-        AvailableStartingPositions.Push([Size_X - 2, 1]);
-        AvailableStartingPositions.Push([1, Size_Y - 2]);
-        AvailableStartingPositions.Push([1, 1]);
-
+        
+        //stackas jei apdorosim rejoininima, jei ne galime tsg masyva turet
+        
         generateMapGood(BlockSpawnChance);
         //GenerateMapSimple();
     }
@@ -58,139 +57,56 @@ public class Map
     private void generateMapGood(int BlockSpawnChance)
     {
         Random rand = new Random();
-        MapGrid = new Cell[Size_X, Size_Y];
+        MapTileGrid = new Tile[Size_X, Size_Y];
         for (int i = 0; i < Size_X; i++)
         {
             for (int j = 0; j < Size_Y; j++)
             {
                 //borderiai
                 if (i == 0 || i == Size_X - 1 || j == 0 || j == Size_Y - 1)
-                    MapGrid[i, j] = new Block(false);
+                    MapTileGrid[i, j] = tileFactory.CreateIndestructableTile();
                 //kas antra bloka pazymi kad butu 
                 if (i % 2 == 0 && j % 2 == 0)
-                    MapGrid[i, j] = new Block(false);
+                    MapTileGrid[i, j] = tileFactory.CreateIndestructableTile();
                 //Tikrina ar nera kampuose kur playeriai spawninasi 
-                if (MapGrid[i, j] == null)
+                if (MapTileGrid[i, j] == null)
                 {
                     if ((i > 2 || j > 2) && (i < Size_X - 3 || j > 2) && (i > 2 || j < Size_Y - 3) && (i < Size_X - 3 || j < Size_Y - 3))
                     {
-                        if (rand.Next(0, 10) < BlockSpawnChance)
-                            MapGrid[i, j] = new Block(true);
+                        if (rand.Next(0, 100) < BlockSpawnChance)
+                            MapTileGrid[i, j] = tileFactory.CreateDestructableTile();
                         else
-                            MapGrid[i, j] = new Air("Air");
+                            MapTileGrid[i, j] = tileFactory.CreateFloorTile();
                     }
                     else
-                        MapGrid[i, j] = new Air("Air");
+                        MapTileGrid[i, j] = tileFactory.CreateFloorTile();
                 }
             }
         }
     }
-
-
-    public int[] AddPlayer(Player newPlayer)
-    {
-        if (PlayerCount < 4 && AvailableStartingPositions.Count > 0)
-        {
-            int[] playerLocation = AvailableStartingPositions.Pop();
-            PlayerCount++;
-            PlayerLocations[newPlayer.Id] = (playerLocation[0], playerLocation[1]);
-            MapGrid[playerLocation[0], playerLocation[1]] = new PlayerCell(newPlayer, newPlayer.Id);
-            return playerLocation;
-        }
-
-        throw new ArgumentException($"Game only supports up too 4 players");
-    }
-
-    public bool RemovePlayer(string playerId)
-    {
-        if (PlayerLocations.TryGetValue(playerId, out var player))
-        {
-            PlayerLocations.Remove(playerId);
-            MapGrid[player.x, player.y] = new Air();
-            AvailableStartingPositions.Push(new int[] { player.x, player.y });
-            PlayerCount = Math.Max(0, PlayerCount - 1);
-            return true;
-        }
-        return false;
-    }
-
-    //tik borderiai
-    private void GenerateMapSimple()
-    {
-        MapGrid = new Cell[Size_X, Size_Y];
-        for (int i = 0; i < Size_X; i++)
-        {
-            for (int j = 0; j < Size_Y; j++)
-            {
-                //borderiai
-                if (i == 0 || i == Size_X - 1 || j == 0 || j == Size_Y - 1)
-                    MapGrid[i, j] = new Block(false);
-                else
-                    MapGrid[i, j] = new Air("Air");
-                
-            }
-        }
-    }
-
 
     //proly nebereiks (
     public bool CheckIfCanMove(int x, int y)
     {
-        return MapGrid[x,y].CanWalk();
+        return checkIfCanMove(x + 1, y + 1);
     }
 
     private bool checkIfCanMove(int x, int y)
     {
-        return MapGrid[x, y].CanWalk();
+        return MapTileGrid[x, y].CanWalk();
     }
-
-    /// <summary>
-    /// moves the player on the map
-    /// </summary>
-    /// <param name="dx"> change in possition</param>
-    /// <param name="dy"> change in possition</param>
-    /// <param name="PlayerId"></param>
-    /// <returns>True if player did move, False if player did not move</returns>
-    public bool Move(int dx, int dy, string PlayerId)
-    {
-        if(PlayerLocations.TryGetValue(PlayerId, out var player) )
-        {
-            //Console.WriteLine($"Gavu player id = {PlayerId}, player yra : {player}");
-            if (Math.Abs(dx) + Math.Abs(dy) < 2){
-                int x = player.x;
-                int y = player.y;
-                int newx = x + dx;
-                int newy = y + dy;
-                if (checkIfCanMove(newx, newy))
-                {
-                    player.x += dx;
-                    player.y += dy;
-                    PlayerLocations[PlayerId] = player;
-                    MapGrid[newx, newy] = MapGrid[x, y];
-                    MapGrid[x, y] = new Air();
-                    return true;
-                }
-                return false;
-            }
-            throw new ArgumentException($"Player can only move in one direction at once, either dx({dx}) or dy({dy}) MUST be zero");
-        }
-        throw new ArgumentException($"Player with id [{PlayerId}] Doesn't exist");
-        return false;
-    }
-
-    //external damage, gal nebereiks Jei game logika mapse :D
+    //extermal
     public void DoDamange(int x, int y)
     {
-        var result = MapGrid[x + 1, y + 1].DoDamage();
-        if (result != null)
-            MapGrid[x + 1, y + 1] = result;
+        doDamange(x + 1, y + 1);
     }
 
+    //internals
     private void doDamange(int x, int y)
     {
-        var result = MapGrid[x, y].DoDamage();
-        if (result != null)
-            MapGrid[x, y] = result;
+        bool result = MapTileGrid[x, y].DoDamage();
+        if (result)
+            MapTileGrid[x, y] = tileFactory.CreateFloorTile();
     }
 
 
@@ -204,7 +120,7 @@ public class Map
             for (int j = 0; j < Size_Y; j++)
             {
                //Console.WriteLine($"i == {i} j == {j} Type == {MapGrid[i, j].Type}");
-               result += MapGrid[i, j];
+               result += MapTileGrid[i, j];
             }
             result += "\n";
         }
@@ -214,14 +130,14 @@ public class Map
     public string ReturnMapToJSon()
     {
         // Create a jagged array matching your grid dimensions
-        var gridArray = new object[Size_X][];
+        var gridArray = new string[Size_X][];
 
         for (int i = 0; i < Size_X; i++)
         {
-            gridArray[i] = new object[Size_Y];
+            gridArray[i] = new string[Size_Y];
             for (int j = 0; j < Size_Y; j++)
             {
-                gridArray[i][j] = MapGrid[i, j].ToString();
+                gridArray[i][j] = MapTileGrid[i, j].ToString();
             }
         }
 
