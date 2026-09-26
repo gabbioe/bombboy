@@ -16,17 +16,20 @@ public class AppHub : Hub
 
 
         _gameManager = gameManager;
+
         //aparently sitas runnina ne viena karta :D
-       // _gameManager.GenerateMap();
+        //_gameManager.GenerateMap();
     }
     public override async Task OnConnectedAsync()
     {
-       var newPlayer = _gameManager.AddPlayer(Context.ConnectionId);
+        //Console.WriteLine(_gameManager._Factory.GetFactoryProductColours());
+        var newPlayer = _gameManager.AddPlayer(Context.ConnectionId);
 
-       await Clients.Caller.SendAsync("ReceiveMap", _gameManager.GetFullMap());
-       await Clients.Caller.SendAsync("ReceivePlayerId", Context.ConnectionId);
-       await Clients.All.SendAsync("UpdatePlayers", _gameManager.GetAllPlayers());
-       await base.OnConnectedAsync();
+        await Clients.Caller.SendAsync("ReceiveMap", _gameManager.GetFullMap());
+        //await Clients.Caller.SendAsync("ReceiveTileColours", _gameManager._Factory.GetFactoryProductColours());
+        await Clients.Caller.SendAsync("ReceivePlayerId", Context.ConnectionId);
+        await Clients.All.SendAsync("UpdatePlayers", _gameManager.GetAllPlayers());
+        await base.OnConnectedAsync();
     }
 
     // Any public method you write here can be called directly from JavaScript in the browser!

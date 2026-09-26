@@ -19,7 +19,7 @@ public class Map
 
     private Tile[,] MapTileGrid;
 
-    private IMapTileFactory tileFactory;
+    private IFactoryMapTile tileFactory;
 
     
 
@@ -30,7 +30,7 @@ public class Map
     /// <param name="size_Y"></param>
     /// <param name="BlockSpawnChance"> kokios tikimybes kad bus sunaikinamas blokas is 10 (pvz 1 is 10 tai 10% kad laisva vieta bus blokas)</param>
     /// <exception cref="ArgumentException"></exception>
-    public Map(int size_X, int size_Y, int BlockSpawnChance, IMapTileFactory factory)
+    public Map(int size_X, int size_Y, int BlockSpawnChance, IFactoryMapTile factory)
     {
         tileFactory = factory;
 

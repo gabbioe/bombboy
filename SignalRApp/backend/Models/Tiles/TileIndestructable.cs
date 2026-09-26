@@ -4,9 +4,9 @@ using System.Text;
 
 namespace SignalRApp.Models.Tiles
 {
-    public class IndestructableTile : Tile
+    public class TileIndestructable : Tile
     {
-        public IndestructableTile(string col) :base()
+        public TileIndestructable(string col) :base()
         {
             colour = col;
             JsonFormating = "X";

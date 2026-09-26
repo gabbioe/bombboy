@@ -24,16 +24,17 @@ namespace SignalRApp.Models
         private Dictionary<string, Player> Players = new();
         public Match()
         {
-            GenerateMap(7, 7, 50, new BasicMapTileFactory());
+            //GenerateMap(7, 7, 50, TileFactory);
             //MatchHasStarted = false;
         }
         
-        public string PrintMap()
+        public string GetMapStringFormat()
         {
             return GameMap.ReturnMapToConsole();
         }
-        public void GenerateMap(int x, int y, int percentage, IMapTileFactory factory){
-            
+        public void GenerateMap(int x, int y, int percentage, IFactoryMapTile factory){
+
+            //Console.WriteLine(factory.GetFactoryProductColours());
             GameMap = new Map(x, y, percentage, factory);
             //full map info
             StartingPositions[0] = [1, 1];
@@ -51,7 +52,7 @@ namespace SignalRApp.Models
         /// <param name="dy"> change in possition</param>
         /// <param name="PlayerId"></param>
         /// <returns>True if player did move, False if player did not move</returns>
-        public bool Move(int dx, int dy, string PlayerId)
+        public bool MovePlayer(int dx, int dy, string PlayerId)
         {
             
             if (Players.TryGetValue(PlayerId, out var player))

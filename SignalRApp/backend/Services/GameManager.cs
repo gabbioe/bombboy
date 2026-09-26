@@ -10,6 +10,13 @@ public class GameManager
 
     private readonly Match _Match = new Match();
 
+    public readonly IFactoryMapTile _Factory = new FactoryMapTileFrozen();
+
+
+    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    //Tik kol negalime keisti per pati zaidima, veliau pakeist
+
+
     public Player AddPlayer(string connectionId)
     {
         var player = new Player
@@ -26,10 +33,10 @@ public class GameManager
         return player;
     }
 
-    public void GenerateMap()
+    public void GenerateMap(int x, int y, int percentage)
     {
-        _Match.GenerateMap(7,7,50,new BasicMapTileFactory());
-        _Match.PrintMap();
+        _Match.GenerateMap(x,x, percentage, _Factory);
+        _Match.GetMapStringFormat();
     }
 
     public bool RemovePlayer(string connectionId, out Player? player)
@@ -44,7 +51,7 @@ public class GameManager
     {
         if(_players.TryGetValue(connectionId, out var player) && player.isAlive)
         {
-            bool didMove = _Match.Move(dx, dy, connectionId);
+            bool didMove = _Match.MovePlayer(dx, dy, connectionId);
 
             Console.WriteLine($"Player {player.Name} moved to ({player.X}, {player.Y}), player has moved:{didMove}");
         }

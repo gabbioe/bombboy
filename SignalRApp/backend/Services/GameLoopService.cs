@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.SignalR;
+using SignalRApp.Models.TileFactories;
 
 namespace SignalRApp.Services;
 
@@ -17,6 +18,8 @@ public class GameLoopService : BackgroundService
     {
         const int tickrate = 50;
 
+        //Asuminu cia vyksta viena karta tik kai paleidi game, jei ne tai negerai :/
+        _gameManager.GenerateMap(7, 7, 50);
         while (!stoppingToken.IsCancellationRequested)
         {
 
