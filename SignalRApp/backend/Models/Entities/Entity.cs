@@ -7,16 +7,16 @@ namespace SignalRApp.Models.GridEntities;
 public abstract class Entity : IComparable<Entity>
 {
     //pavadinimui, dar niekam nenaudojom ;/
-    public string JsonFormating { get; set; }
+    protected string _jsonFormating { get; set; }
 
     public Entity(int layer = 0, string type = "C")
     {
-        DrawingLayer = layer;
-        JsonFormating = type;
+        _drawingLayer = layer;
+        _jsonFormating = type;
     }
 
     //piesimo lygis, pies entity su maziausiu value, pvz tarp dvieju entities su drawing layer = 0 ir 1 ims ta kuris turi drawling layer 0
-    private int DrawingLayer {get;set;}    
+    private int _drawingLayer {get;set;}    
 
     //Probably reikes naujo/atskiro functiono kur butu kokia nors uzlipimo / pickup funckija
     public abstract bool CanWalk();
@@ -26,12 +26,12 @@ public abstract class Entity : IComparable<Entity>
 
     public override string? ToString()
     {
-        return JsonFormating;
+        return _jsonFormating;
     }
 
     public int CompareTo(Entity? other)
     {
-        return this.DrawingLayer.CompareTo(other.DrawingLayer);
+        return this._drawingLayer.CompareTo(other._drawingLayer);
     }
 }
 
