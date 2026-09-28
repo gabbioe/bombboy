@@ -49,6 +49,8 @@
             padding: 8px 16px;
             border-radius: 6px;
             border: 1px solid #333;
+            flex-wrap: wrap;
+            justify-content: center;
         }
 
         .status-badge {
@@ -76,6 +78,29 @@
         .player-tag {
             color: #3498db;
             font-weight: bold;
+        }
+
+        .strategy-picker {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+        }
+
+        .strategy-select {
+            background: #181a1b;
+            color: #f39c12;
+            border: 1px solid #555;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: bold;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .strategy-select:focus {
+            border-color: #f39c12;
         }
 
         /* Game Board Container */
@@ -141,6 +166,50 @@
             font-size: 18px;
         }
 
+        /* Bomb Tile (O) */
+        .tile-bomb {
+            background-color: #27ae60;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: bomb-pulse 0.6s infinite alternate;
+            z-index: 4;
+        }
+
+        .tile-bomb::after {
+            content: "💣";
+            font-size: 24px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.7));
+        }
+
+        @keyframes bomb-pulse {
+            from { transform: scale(0.95); }
+            to { transform: scale(1.12); }
+        }
+
+        /* Blast / Fire Tile (*) */
+        .tile-blast {
+            background: radial-gradient(circle, #ffe600 0%, #ff5722 60%, #b71c1c 100%) !important;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 10px #ff5722, inset 0 0 8px #ffe600;
+            animation: blast-flicker 0.12s infinite alternate;
+            z-index: 5;
+        }
+
+        .tile-blast::after {
+            content: "💥";
+            font-size: 22px;
+        }
+
+        @keyframes blast-flicker {
+            from { filter: brightness(1); }
+            to { filter: brightness(1.25); }
+        }
+
         /* Player Layer */
         #players-layer {
             position: absolute;
@@ -166,6 +235,12 @@
             transition: left 0.08s linear, top 0.08s linear;
             border: 2px solid #fff;
             z-index: 10;
+        }
+
+        .player.is-dead {
+            opacity: 0.35;
+            filter: grayscale(100%);
+            border: 2px dashed #e74c3c;
         }
 
         /* Local Player Highlight */
@@ -202,7 +277,7 @@
             color: #ddd;
         }
 
-        /* On-Screen D-Pad (convenient for mouse testing) */
+        /* On-Screen D-Pad */
         .dpad {
             display: grid;
             grid-template-columns: repeat(3, 38px);
@@ -241,6 +316,16 @@
             <div>Player: <span id="my-name" class="player-tag">Connecting...</span></div>
             <div>Pos: <span id="my-pos" style="color: #aaa;">(-, -)</span></div>
             <div>Players: <span id="player-count" style="font-weight: bold; color: #2ecc71;">0</span>/4</div>
+            <div class="strategy-picker">
+                <label for="strategy-select">Bomb Strategy:</label>
+                <select id="strategy-select" class="strategy-select" onchange="onStrategyChange(this.value)">
+                    <option value="classic">1. Classic (Cross +)</option>
+                    <option value="diagonal">2. Diagonal (X-Shape)</option>
+                    <option value="area">3. Area Box (3x3)</option>
+                    <option value="piercing">4. Piercing (Penetrating)</option>
+                    <option value="floodfill">5. Flood Fill (BFS)</option>
+                </select>
+            </div>
         </div>
     </header>
 
@@ -252,7 +337,9 @@
 
     <div class="footer-info">
         <div class="controls-hint">
-            Move: <strong>W, A, S, D</strong> or <strong>Arrow Keys</strong> &nbsp;|&nbsp; Bomb: <strong>Spacebar</strong>
+            Move: <strong>W, A, S, D</strong> or <strong>Arrows</strong> &nbsp;|&nbsp;
+            Bomb: <strong>Spacebar</strong> &nbsp;|&nbsp;
+            Strategy: <strong>1-5</strong> (Cross, Diag, Area, Pierce, Flood)
         </div>
 
         <!-- Optional D-Pad for mouse testing -->
@@ -278,11 +365,20 @@
         const gameContainer = document.getElementById("game-container");
         const mapGridEl = document.getElementById("map-grid");
         const playersLayerEl = document.getElementById("players-layer");
+        const strategySelectEl = document.getElementById("strategy-select");
 
         let myConnectionId = null;
         let mapData = null;
         let lastMoveTime = 0;
-        const MOVE_COOLDOWN_MS = 100; // Small delay to avoid input flooding
+        const MOVE_COOLDOWN_MS = 100;
+        let selectedStrategy = "classic";
+
+        function onStrategyChange(newStrat) {
+            selectedStrategy = newStrat;
+            if (connection.state === signalR.HubConnectionState.Connected) {
+                connection.invoke("SetStrategy", selectedStrategy).catch(err => console.error("SetStrategy error:", err));
+            }
+        }
 
         // 1. SIGNALR CONNECTION
         const connection = new signalR.HubConnectionBuilder()
@@ -306,7 +402,7 @@
             }
         });
 
-        // 4. RECEIVE PLAYERS LIST (from UpdatePlayers or Gametick)
+        // 4. RECEIVE PLAYERS LIST
         connection.on("UpdatePlayers", (players) => {
             renderPlayers(players);
         });
@@ -323,7 +419,6 @@
                 if (!myConnectionId && connection.connectionId) {
                     myConnectionId = connection.connectionId;
                 }
-                // Request map in case ReceiveMap wasn't received during handshake
                 if (!mapData) {
                     connection.invoke("GetMap")
                         .then(raw => {
@@ -378,6 +473,12 @@
                     } else if (tileType === "B") {
                         tileEl.classList.add("tile-block");
                         tileEl.title = "Block";
+                    } else if (tileType === "O" || tileType === "Bomb") {
+                        tileEl.classList.add("tile-bomb");
+                        tileEl.title = "Bomb";
+                    } else if (tileType === "*" || tileType === "Blast") {
+                        tileEl.classList.add("tile-blast");
+                        tileEl.title = "Blast";
                     } else {
                         tileEl.classList.add("tile-floor");
                     }
@@ -401,21 +502,22 @@
                 const name = player.name || player.Name || `P${index + 1}`;
                 const x = player.x !== undefined ? player.x : player.X;
                 const y = player.y !== undefined ? player.y : player.Y;
+                const isAlive = player.isAlive !== undefined ? player.isAlive : true;
                 const isMe = (myConnectionId && id === myConnectionId) || (!foundMe && players.length === 1);
 
                 if (isMe) {
                     foundMe = true;
-                    myNameEl.textContent = name;
+                    myNameEl.textContent = name + (isAlive ? "" : " (DEAD)");
                     myPosEl.textContent = `(${x}, ${y})`;
                 }
 
                 const playerEl = document.createElement("div");
-                playerEl.className = "player" + (isMe ? " is-me" : "");
+                playerEl.className = "player" + (isMe ? " is-me" : "") + (isAlive ? "" : " is-dead");
                 playerEl.style.backgroundColor = PLAYER_COLORS[index % PLAYER_COLORS.length];
                 playerEl.style.left = (x * TILE_SIZE + 4) + "px";
                 playerEl.style.top = (y * TILE_SIZE + 4) + "px";
-                playerEl.textContent = name.slice(-2).toUpperCase();
-                playerEl.title = `${name} (${x}, ${y})`;
+                playerEl.textContent = isAlive ? name.slice(-2).toUpperCase() : "☠";
+                playerEl.title = `${name} (${x}, ${y}) - ${isAlive ? 'Alive' : 'Dead'}`;
 
                 playersLayerEl.appendChild(playerEl);
             });
@@ -437,14 +539,37 @@
         // 9. BOMB ACTION
         function placeBomb() {
             if (connection.state === signalR.HubConnectionState.Connected) {
-                connection.invoke("PlaceBomb").catch(err => {
-                    console.log("PlaceBomb invoke (backend implementation pending):", err.message);
+                connection.invoke("PlaceBomb", selectedStrategy).catch(err => {
+                    console.error("PlaceBomb error:", err);
                 });
             }
         }
 
         // 10. KEYBOARD LISTENER
         window.addEventListener("keydown", (event) => {
+            // Strategy selection keys: 1, 2, 3, 4
+            if (event.key === "1") {
+                strategySelectEl.value = "classic";
+                onStrategyChange("classic");
+                return;
+            } else if (event.key === "2") {
+                strategySelectEl.value = "diagonal";
+                onStrategyChange("diagonal");
+                return;
+            } else if (event.key === "3") {
+                strategySelectEl.value = "area";
+                onStrategyChange("area");
+                return;
+            } else if (event.key === "4") {
+                strategySelectEl.value = "piercing";
+                onStrategyChange("piercing");
+                return;
+            } else if (event.key === "5") {
+                strategySelectEl.value = "floodfill";
+                onStrategyChange("floodfill");
+                return;
+            }
+
             if (event.code === "Space" || event.key === " ") {
                 event.preventDefault();
                 placeBomb();

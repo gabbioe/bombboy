@@ -19,14 +19,19 @@ public class GameLoopService : BackgroundService
 
         while (!stoppingToken.IsCancellationRequested)
         {
+            bool mapChanged = _gameManager.UpdateGameState();
 
             if (_gameManager.GetAllPlayers().Any())
             {
+                if (mapChanged)
+                {
+                    await _hubContext.Clients.All.SendAsync("ReceiveMap", _gameManager.GetMap(), stoppingToken);
+                }
+
                 await _hubContext.Clients.All.SendAsync("Gametick", _gameManager.GetAllPlayers(), stoppingToken);
             }
 
             await Task.Delay(tickrate, stoppingToken);
-            
         }
     }
 }
