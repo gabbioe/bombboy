@@ -167,7 +167,7 @@ namespace SignalRApp.Models
                 var entry = new JsonObject
                 {
                     //kad sutiktu su mapo lokacijomis
-                    [$"{p.Value.X},{p.Value.Y}"] = p.Value.GetPossitionAndDirectionJSon(),
+                    [$"{p.Value.X},{p.Value.Y}"] = p.Value.GetPossitionAndDirectionJson(),
                 };
                 EntityJsonArray.Add(entry);
             }

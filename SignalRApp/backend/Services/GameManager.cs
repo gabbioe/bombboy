@@ -49,7 +49,7 @@ public class GameManager
 
     public void MovePlayer(string connectionId, int dx, int dy)
     {
-        if(_players.TryGetValue(connectionId, out var player) && player.isAlive)
+        if(_players.TryGetValue(connectionId, out var player) && player.IsAlive)
         {
             bool didMove = _Match.MovePlayer(dx, dy, connectionId);
 
