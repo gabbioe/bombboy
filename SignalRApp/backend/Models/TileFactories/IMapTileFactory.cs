@@ -9,13 +9,13 @@ using System.Text.Json.Nodes;
 
 namespace SignalRApp.Models.TileFactories
 {
-    public interface IFactoryMapTile
+    public interface IMapTileFactory
     {
-        public abstract TileFloor CreateFloorTile();
+        public abstract FloorTile CreateFloorTile();
 
-        public abstract TileIndestructable CreateIndestructableTile();
+        public abstract IndestructableTile CreateIndestructableTile();
 
-        public abstract TileDestructable CreateDestructableTile();
+        public abstract DestructableTile CreateDestructableTile();
 
         public virtual string GetFactoryProductColours()
         {

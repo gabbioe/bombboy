@@ -8,8 +8,8 @@ namespace SignalRApp.Models.Tiles
 {
     abstract public class Tile
     {
-        protected string JsonFormating;
-        protected string colour;
+        protected string _jsonFormating;
+        protected string _colour;
         public abstract bool CanWalk();
 
         //tarkime grazina ar mire
@@ -19,13 +19,13 @@ namespace SignalRApp.Models.Tiles
         //(kolkas paprastas, veliau gal pilnai .css stuff ar image jei noresim
         public virtual string Colour()
         {
-            return colour;
+            return _colour;
         }
 
         //!!!!!!!!!!! Sita butinai reikia turet implementuota, jis naudojamas kad perduot mapo informacija klientui
         public virtual string? ToString()
         {
-            return JsonFormating;
+            return _jsonFormating;
         }
     }
 }

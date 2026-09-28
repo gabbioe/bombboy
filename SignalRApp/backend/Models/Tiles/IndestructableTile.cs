@@ -4,12 +4,12 @@ using System.Text;
 
 namespace SignalRApp.Models.Tiles
 {
-    public class TileDestructable : Tile
+    public class IndestructableTile : Tile
     {
-        public TileDestructable(string col) :base()
+        public IndestructableTile(string col) :base()
         {
-            colour = col;
-            JsonFormating = "B";
+            _colour = col;
+            _jsonFormating = "X";
         }
         public override bool CanWalk()
         {
@@ -18,7 +18,7 @@ namespace SignalRApp.Models.Tiles
 
         public override bool DoDamage()
         {
-            return true;
+            return false;
         }
     }
 }

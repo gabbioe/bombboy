@@ -4,21 +4,21 @@ using System.Text;
 
 namespace SignalRApp.Models.Tiles
 {
-    public class TileFloor : Tile
+    public class DestructableTile : Tile
     {
-        public TileFloor(string col) :base()
+        public DestructableTile(string col) :base()
         {
-            colour = col;
-            JsonFormating = "_";
+            _colour = col;
+            _jsonFormating = "B";
         }
         public override bool CanWalk()
         {
-            return true;
+            return false;
         }
 
         public override bool DoDamage()
         {
-            return false;
+            return true;
         }
     }
 }

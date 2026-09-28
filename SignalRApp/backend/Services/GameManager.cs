@@ -10,7 +10,7 @@ public class GameManager
 
     private readonly Match _Match = new Match();
 
-    public readonly IFactoryMapTile _Factory = new FactoryMapTileFrozen();
+    public readonly IMapTileFactory _Factory = new FrozenMapTileFactory();
 
 
     //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

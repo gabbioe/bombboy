@@ -32,7 +32,7 @@ namespace SignalRApp.Models
         {
             return GameMap.ReturnMapToConsole();
         }
-        public void GenerateMap(int x, int y, int percentage, IFactoryMapTile factory){
+        public void GenerateMap(int x, int y, int percentage, IMapTileFactory factory){
 
             //Console.WriteLine(factory.GetFactoryProductColours());
             GameMap = new Map(x, y, percentage, factory);
