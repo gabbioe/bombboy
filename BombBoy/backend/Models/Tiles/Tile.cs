@@ -1,10 +1,10 @@
-﻿using SignalRApp.Models.GridEntities;
+﻿using BombBoy.Models.GridEntities;
 using System;
 using System.Collections.Generic;
 using System.Reflection.Metadata.Ecma335;
 using System.Text;
 
-namespace SignalRApp.Models.Tiles
+namespace BombBoy.Models.Tiles
 {
     abstract public class Tile
     {

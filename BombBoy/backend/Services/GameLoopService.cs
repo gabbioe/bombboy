@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.SignalR;
-using SignalRApp.Models.TileFactories;
+using BombBoy.Models.TileFactories;
 
-namespace SignalRApp.Services;
+namespace BombBoy.Services;
 
 public class GameLoopService : BackgroundService
 {

@@ -1,8 +1,8 @@
-using SignalRApp.Models;
-using SignalRApp.Models.TileFactories;
+using BombBoy.Models;
+using BombBoy.Models.TileFactories;
 using System.Collections.Concurrent;
 
-namespace SignalRApp.Services;
+namespace BombBoy.Services;
 
 public class GameManager
 {

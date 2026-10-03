@@ -4,7 +4,7 @@
 *.userossc
 *.sln.docstates
 
-SignalRApp/backend/.vs/
+BombBoy/backend/.vs/
 *.user
 *.userossc
 *.sln.docstates

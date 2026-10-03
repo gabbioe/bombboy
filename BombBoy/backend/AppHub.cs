@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
-using SignalRApp.Models;
-using SignalRApp.Services;
+using BombBoy.Models;
+using BombBoy.Services;
 
 // Inheriting from "Hub" gives this class superpowers:
 // 1. Clients (browsers) can call public methods on this class directly via JavaScript.

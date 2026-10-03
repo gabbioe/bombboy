@@ -1,4 +1,4 @@
-﻿using SignalRApp.Models.Tiles;
+﻿using BombBoy.Models.Tiles;
 using System;
 using System.Collections.Generic;
 using System.Reflection.Metadata.Ecma335;
@@ -7,7 +7,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace SignalRApp.Models.TileFactories
+namespace BombBoy.Models.TileFactories
 {
     public interface IMapTileFactory
     {

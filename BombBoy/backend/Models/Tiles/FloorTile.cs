@@ -2,23 +2,23 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace SignalRApp.Models.Tiles
+namespace BombBoy.Models.Tiles
 {
-    public class DestructableTile : Tile
+    public class FloorTile : Tile
     {
-        public DestructableTile(string col) :base()
+        public FloorTile(string col) :base()
         {
             _colour = col;
-            _jsonFormating = "B";
+            _jsonFormating = "_";
         }
         public override bool CanWalk()
         {
-            return false;
+            return true;
         }
 
         public override bool DoDamage()
         {
-            return true;
+            return false;
         }
     }
 }

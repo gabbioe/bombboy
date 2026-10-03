@@ -2,14 +2,14 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace SignalRApp.Models.Tiles
+namespace BombBoy.Models.Tiles
 {
-    public class IndestructableTile : Tile
+    public class DestructableTile : Tile
     {
-        public IndestructableTile(string col) :base()
+        public DestructableTile(string col) :base()
         {
             _colour = col;
-            _jsonFormating = "X";
+            _jsonFormating = "B";
         }
         public override bool CanWalk()
         {
@@ -18,7 +18,7 @@ namespace SignalRApp.Models.Tiles
 
         public override bool DoDamage()
         {
-            return false;
+            return true;
         }
     }
 }

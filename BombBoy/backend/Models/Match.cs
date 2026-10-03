@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Routing.Constraints;
-using SignalRApp.Models.GridEntities;
-using SignalRApp.Models.TileFactories;
+using BombBoy.Models.GridEntities;
+using BombBoy.Models.TileFactories;
 using System;
 using System.Collections.Generic;
 using System.Reflection.Metadata.Ecma335;
@@ -8,7 +8,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace SignalRApp.Models
+namespace BombBoy.Models
 {
     public class Match 
     {

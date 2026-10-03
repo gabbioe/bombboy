@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace SignalRApp.Models.GridEntities;
+namespace BombBoy.Models.GridEntities;
 
 public abstract class Entity : IComparable<Entity>
 {

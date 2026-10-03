@@ -1,15 +1,15 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
-using SignalRApp.Models;
-using SignalRApp.Models.GridEntities;
-using SignalRApp.Models.TileFactories;
-using SignalRApp.Models.Tiles;
+using BombBoy.Models;
+using BombBoy.Models.GridEntities;
+using BombBoy.Models.TileFactories;
+using BombBoy.Models.Tiles;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
 
 
-namespace SignalRApp.Models;
+namespace BombBoy.Models;
 
 public class Map
 {

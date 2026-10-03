@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace SignalRApp.Models;
+namespace BombBoy.Models;
 
 public class Player
 {

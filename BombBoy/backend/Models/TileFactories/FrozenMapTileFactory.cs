@@ -1,9 +1,9 @@
-﻿using SignalRApp.Models.Tiles;
+﻿using BombBoy.Models.Tiles;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace SignalRApp.Models.TileFactories
+namespace BombBoy.Models.TileFactories
 {
     internal class FrozenMapTileFactory : IMapTileFactory
     {
