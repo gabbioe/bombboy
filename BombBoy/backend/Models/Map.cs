@@ -19,7 +19,10 @@ public class Map
 
     private Tile[,] MapTileGrid;
 
+    public event Action<int, int, int>? OnBlastSpawned;
+
     private IMapTileFactory tileFactory;
+
 
     
 
@@ -86,24 +89,35 @@ public class Map
             }
         }
     }
-
+    public Tile? GetTile(int x, int y)
+    {
+        if (!IsValidCoord(x, y)) return null;
+        return MapTileGrid[x, y];
+    }
     
     public bool CheckIfCanMove(int x, int y)
     {
         return MapTileGrid[x, y].CanWalk();
     }
-    //extermal
-    public void DoDamange(int x, int y)
+
+    public bool IsValidCoord(int x, int y)
     {
-        doDamange(x + 1, y + 1);
+        return x >= 0 && x < Size_X && y >= 0 && y < Size_Y;
     }
 
-    //internals
-    private void doDamange(int x, int y)
+    public void SpawnBlast(int x, int y, int durationTicks = 10)
     {
-        bool result = MapTileGrid[x, y].DoDamage();
-        if (result)
+        // 1. Boundary check
+        if (!IsValidCoord(x, y)) return;
+        // 2. Do not spawn blast on indestructible borders or pillars
+        if (MapTileGrid[x, y] is IndestructableTile) return;
+        // 3. If it's a destructible block, damage it and turn it into floor
+        if (MapTileGrid[x, y].DoDamage())
+        {
             MapTileGrid[x, y] = tileFactory.CreateFloorTile();
+        }
+        // 4. Notify Match to add the Blast entity above this tile
+        OnBlastSpawned?.Invoke(x, y, durationTicks);
     }
 
 
