@@ -48,7 +48,7 @@ public class AppHub : Hub
     public async Task Move(int dx, int dy)
     {
         _gameManager.MovePlayer(Context.ConnectionId, dx, dy);
-        await Clients.All.SendAsync("UpdatePlayers", _gameManager.GetAllPlayers());
+        await Clients.All.SendAsync("Gametick", _gameManager.GetFullMap());
     }
 
     public string GetMap()
