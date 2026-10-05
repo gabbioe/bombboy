@@ -17,6 +17,7 @@ public class GameLoopService : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         const int tickrate = 50;
+        const float deltaTime = 0.05f;
 
         //Asuminu cia vyksta viena karta tik kai paleidi game, jei ne tai negerai :/
         _gameManager.GenerateMap(7, 7, 50);
@@ -25,7 +26,8 @@ public class GameLoopService : BackgroundService
 
             if (_gameManager.GetAllPlayers().Any())
             {
-                await _hubContext.Clients.All.SendAsync("Gametick", _gameManager.GetAllPlayers(), stoppingToken);
+                _gameManager.Update(deltaTime);
+                await _hubContext.Clients.All.SendAsync("Gametick", _gameManager.GetFullMap(), stoppingToken);
             }
 
             await Task.Delay(tickrate, stoppingToken);

@@ -55,4 +55,18 @@ public class AppHub : Hub
     {
         return _gameManager.GetFullMap();
     }
+
+    public void PlaceBomb(string? strategyName = null)
+    {
+        if (!string.IsNullOrEmpty(strategyName))
+        {
+            _gameManager.SetPlayerStrategy(Context.ConnectionId, strategyName);
+        }
+        _gameManager.PlaceBomb(Context.ConnectionId);
+    }
+
+    public void SetStrategy(string strategyName)
+    {
+        _gameManager.SetPlayerStrategy(Context.ConnectionId, strategyName);
+    }
 }

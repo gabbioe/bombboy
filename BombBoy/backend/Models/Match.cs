@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Routing.Constraints;
+using Microsoft.AspNetCore.Routing.Constraints;
 using BombBoy.Models.GridEntities;
 using BombBoy.Models.TileFactories;
 using System;
@@ -21,6 +21,8 @@ namespace BombBoy.Models
         private int[][] StartingPositions = new int[4][];
 
         private List<int> AvailableStartingPositions = new List<int>{ 0, 1, 2, 3 };
+        private List<Bomb> ActiveBombs = new();
+        private List<Blast> ActiveBlasts = new();
         private Dictionary<string, Player> Players = new();
         public Match()
         {
@@ -36,6 +38,28 @@ namespace BombBoy.Models
 
             //Console.WriteLine(factory.GetFactoryProductColours());
             GameMap = new Map(x, y, percentage, factory);
+            GameMap.OnBlastSpawned += (bx, by, durationTicks) =>
+            {
+                var blast = new Blast(bx, by);
+                if (!Entities.ContainsKey((bx, by)))
+                    Entities[(bx, by)] = new List<Entity>();
+                Entities[(bx, by)].Add(blast);
+                ActiveBlasts.Add(blast);
+
+                foreach (var p in Players.Values)
+                {
+                    if (p.IsAlive && p.X == bx && p.Y == by)
+                    {
+                        p.IsAlive = false;
+                    }
+                }
+
+                var hitBomb = ActiveBombs.FirstOrDefault(b => b.X == bx && b.Y == by);
+                if (hitBomb != null)
+                {
+                    hitBomb.DoDamage();
+                }
+            };
             //full map info
             StartingPositions[0] = [1, 1];
             StartingPositions[1] = [1, y ];
@@ -66,6 +90,11 @@ namespace BombBoy.Models
 
                         Players[PlayerId].X = x+ dx;
                         Players[PlayerId].Y = y+ dy;
+
+                        if (ActiveBlasts.Any(b => b.X == Players[PlayerId].X && b.Y == Players[PlayerId].Y))
+                        {
+                            Players[PlayerId].IsAlive = false;
+                        }
                         switch (dx, dy)
                         {
                             case (0, 1):
@@ -121,7 +150,55 @@ namespace BombBoy.Models
             }
             return false;
         }
-        //returns two jsons in one (first Bottom layer(tiles), then Top Layer(entities))
+
+
+        public bool PlaceBomb(Player player)
+        {
+            int playerCurrentBombs = ActiveBombs.Count(b => b.OwnerId == player.Id);
+            if (playerCurrentBombs >= player.BombCount)
+                return false;
+            if (ActiveBombs.Any(b => b.X == player.X && b.Y == player.Y))
+                return false;
+            var bomb = new Bomb(player.X, player.Y, player.BombRange, player.ActiveBombStrategy, player.Id);
+            ActiveBombs.Add(bomb);
+            if (!Entities.ContainsKey((bomb.X, bomb.Y)))
+                Entities[(bomb.X, bomb.Y)] = new List<Entity>();
+            Entities[(bomb.X, bomb.Y)].Add(bomb);
+            return true;
+        }
+        // Called every game tick
+        public void Update(float deltaTime)
+        {
+            for (int i = ActiveBombs.Count - 1; i >= 0; i--)
+            {
+                var bomb = ActiveBombs[i];
+                if (bomb.Tick(deltaTime))
+                {
+                    bomb.Detonate(GameMap);
+                    if (Entities.TryGetValue((bomb.X, bomb.Y), out var list))
+                    {
+                        list.Remove(bomb);
+                        if (list.Count == 0) Entities.Remove((bomb.X, bomb.Y));
+                    }
+                    ActiveBombs.RemoveAt(i);
+                }
+            }
+            for (int i = ActiveBlasts.Count - 1; i >= 0; i--)
+            {
+                var blast = ActiveBlasts[i];
+                if (blast.Tick(deltaTime))
+                {
+                    if (Entities.TryGetValue((blast.X, blast.Y), out var list))
+                    {
+                        list.Remove(blast);
+                        if (list.Count == 0) Entities.Remove((blast.X, blast.Y));
+                    }
+                    ActiveBlasts.RemoveAt(i);
+                }
+            }
+        }
+    
+            //returns two jsons in one (first Bottom layer(tiles), then Top Layer(entities))
         public string GetFullGameMapJson(bool ToConsole = false)
         {
             var CombinedJson = new JsonObject
@@ -143,27 +220,29 @@ namespace BombBoy.Models
         //generates the Top Layer(entities)
         private string GetEntityJson()
         {
-            List<JsonObject> EntityJsonArray = new List<JsonObject>();
+            var entityDict = new JsonObject();
             foreach(var e in Entities)
             {
-                // just in case kitur nesortinta
-                e.Value.Sort();
-                var entry = new JsonObject
+                if (e.Value.Count > 0)
                 {
+                    // just in case kitur nesortinta
+                    e.Value.Sort();
                     //kad sutiktu su mapo lokacijomis
-                    [$"{e.Key.x},{e.Key.y}"] = e.Value[0].ToString(),
-                };
-                EntityJsonArray.Add(entry);
+                    entityDict[$"{e.Key.x},{e.Key.y}"] = e.Value[0].ToString();
+                }
             }
 
             // Serialize to a JSON string
-            return JsonSerializer.Serialize(EntityJsonArray);
+            return JsonSerializer.Serialize(entityDict);
         }
         private string GetPlayerJson()
         {
             List<JsonObject> EntityJsonArray = new List<JsonObject>();
             foreach (var p in Players)
             {
+                if (!p.Value.IsAlive)
+                    continue;
+
                 var entry = new JsonObject
                 {
                     //kad sutiktu su mapo lokacijomis

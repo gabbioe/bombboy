@@ -1,4 +1,5 @@
 using BombBoy.Models;
+using BombBoy.Models.Strategies;
 using BombBoy.Models.TileFactories;
 using System.Collections.Concurrent;
 
@@ -54,6 +55,32 @@ public class GameManager
             bool didMove = _Match.MovePlayer(dx, dy, connectionId);
 
             Console.WriteLine($"Player {player.Name} moved to ({player.X}, {player.Y}), player has moved:{didMove}");
+        }
+    }
+    public void Update(float deltaTime)
+    {
+        _Match.Update(deltaTime);
+    }
+    public void PlaceBomb(string connectionId)
+    {
+        if (_players.TryGetValue(connectionId, out var player) && player.IsAlive)
+        {
+            _Match.PlaceBomb(player);
+        }
+    }
+
+    public void SetPlayerStrategy(string connectionId, string strategyName)
+    {
+        if (_players.TryGetValue(connectionId, out var player))
+        {
+            player.ActiveBombStrategy = strategyName.ToLower() switch
+            {
+                "diagonal" => new DiagonalExplosionStrategy(),
+                "area" => new AreaBoxExplosionStrategy(),
+                "piercing" => new PiercingLineExplosionStrategy(),
+                "floodfill" => new FloodFillExplosionStrategy(),
+                _ => new ClassicCrossExplosionStrategy()
+            };
         }
     }
 
