@@ -373,6 +373,15 @@
         const TILE_SIZE = 40;
         const PLAYER_COLORS = ["#3498db", "#e74c3c", "#2ecc71", "#f39c12"];
 
+        // Persistent color mapping by player ID
+        const playerColorMap = new Map();
+        function getPlayerColor(id) {
+            if (!playerColorMap.has(id)) {
+                playerColorMap.set(id, PLAYER_COLORS[playerColorMap.size % PLAYER_COLORS.length]);
+            }
+            return playerColorMap.get(id);
+        }
+
         const statusDot = document.getElementById("status-dot");
         const statusText = document.getElementById("status-text");
         const myNameEl = document.getElementById("my-name");
@@ -618,13 +627,16 @@
                     myPosEl.textContent = `(${x}, ${y})`;
                 }
 
+                // Do not render dead players on the board
+                if (!isAlive) return;
+
                 const playerEl = document.createElement("div");
-                playerEl.className = "player" + (isMe ? " is-me" : "") + (isAlive ? "" : " is-dead");
-                playerEl.style.backgroundColor = PLAYER_COLORS[index % PLAYER_COLORS.length];
+                playerEl.className = "player" + (isMe ? " is-me" : "");
+                playerEl.style.backgroundColor = getPlayerColor(id);
                 playerEl.style.left = (x * TILE_SIZE + 4) + "px";
                 playerEl.style.top = (y * TILE_SIZE + 4) + "px";
-                playerEl.textContent = isAlive ? name.slice(-2).toUpperCase() : "☠";
-                playerEl.title = `${name} (${x}, ${y}) - ${isAlive ? 'Alive' : 'Dead'}`;
+                playerEl.textContent = name.slice(-2).toUpperCase();
+                playerEl.title = `${name} (${x}, ${y})`;
 
                 playersLayerEl.appendChild(playerEl);
             });
