@@ -130,4 +130,23 @@ public class GameManager
     }
 
     public record PlayerDto(string Id, string Name, int X, int Y, bool IsAlive);
+
+    public List<Match.ItemDto> GetAllItems() // use Match.ItemDto
+    {
+        lock (_lock)
+        {
+            return _Match.GetAllItems();
+        }
+    }
+
+    public void UseWeapon(string connectionId)
+    {
+        lock (_lock)
+        {
+            if (_players.TryGetValue(connectionId, out var player) && player.IsAlive)
+            {
+                _Match.UseWeapon(player);
+            }
+        }
+    }
 }

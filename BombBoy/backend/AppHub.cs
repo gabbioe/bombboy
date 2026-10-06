@@ -44,11 +44,21 @@ public class AppHub : Hub
         }                                                                                                        
                                                                                                                      
         await base.OnDisconnectedAsync(exception);                                                               
-    }        
+    }
+
+    public async Task UseWeapon()
+    {
+        _gameManager.UseWeapon(Context.ConnectionId);
+        // send update to all clients
+        await Clients.All.SendAsync("Gametick", _gameManager.GetFullMap());
+        //await Clients.All.SendAsync("UpdateItems", _gameManager.GetAllItems()); //testuojam ar jsone užteks info
+    }
+
     public async Task Move(int dx, int dy)
     {
         _gameManager.MovePlayer(Context.ConnectionId, dx, dy);
         await Clients.All.SendAsync("Gametick", _gameManager.GetFullMap());
+        await Clients.All.SendAsync("UpdateItems", _gameManager.GetAllItems()); // send items as well
     }
 
     public string GetMap()

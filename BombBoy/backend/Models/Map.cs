@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using BombBoy.Models;
-using BombBoy.Models.GridEntities;
 using BombBoy.Models.TileFactories;
 using BombBoy.Models.Tiles;
 using System;
@@ -20,6 +19,7 @@ public class Map
     private Tile[,] MapTileGrid;
 
     public event Action<int, int, int>? OnBlastSpawned;
+    public event Action<int, int>? OnBlockDestroyed;
 
     private IMapTileFactory tileFactory;
 
@@ -94,7 +94,16 @@ public class Map
         if (!IsValidCoord(x, y)) return null;
         return MapTileGrid[x, y];
     }
-    
+    public void DestroyTile(int x, int y)
+    {
+        if (!IsValidCoord(x, y)) return;
+        if (MapTileGrid[x, y] is DestructableTile)
+        {
+            MapTileGrid[x, y] = tileFactory.CreateFloorTile();
+            OnBlockDestroyed?.Invoke(x, y); // trigger item spawn
+        }
+    }
+
     public bool CheckIfCanMove(int x, int y)
     {
         return MapTileGrid[x, y].CanWalk();
@@ -115,6 +124,8 @@ public class Map
         if (MapTileGrid[x, y].DoDamage())
         {
             MapTileGrid[x, y] = tileFactory.CreateFloorTile();
+            // notify Match to potentially spawn an item
+            OnBlockDestroyed?.Invoke(x, y);
         }
         // 4. Notify Match to add the Blast entity above this tile
         OnBlastSpawned?.Invoke(x, y, durationTicks);
@@ -156,5 +167,12 @@ public class Map
         return JsonSerializer.Serialize(gridArray);
     }
 
-
+    public int GetX()
+    {
+        return Size_X;
+    }
+    public int GetY()
+    {
+        return Size_X;
+    }
 }

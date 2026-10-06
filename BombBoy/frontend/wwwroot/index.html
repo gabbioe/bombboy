@@ -146,6 +146,46 @@
             filter: grayscale(100%);
             border: 2px dashed #e74c3c;
         }
+		
+		/* Shield Aura on Player */
+		.player.has-shield {
+			box-shadow: 0 0 14px 4px #3498db, 0 4px 8px rgba(0, 0, 0, 0.5);
+			border-color: #85c1e9 !important;
+		}
+
+		.player.has-shield::after {
+			content: "🛡";
+			position: absolute;
+			top: -12px;
+			right: -12px;
+			font-size: 14px;
+			filter: drop-shadow(0 0 4px #3498db);
+		}
+
+		/* Player HUD (Lives & Weapon) */
+		.player-info {
+			position: absolute;
+			font-size: 10px;
+			font-weight: bold;
+			color: #fff;
+			text-shadow: 0 1px 2px #000;
+			pointer-events: none;
+			white-space: nowrap;
+			display: flex;
+			align-items: center;
+			gap: 4px;
+		}
+
+		.player-weapon {
+			position: absolute;
+			top: -12px;
+			left: 50%;
+			transform: translateX(-50%);
+			background: rgba(0,0,0,0.6);
+			border-radius: 4px;
+			padding: 0 3px;
+			font-size: 12px;
+		}
 
         /* Game Board Container */
         #game-container {
@@ -353,9 +393,10 @@
 
     <div class="footer-info">
         <div class="controls-hint">
-            Move: <strong>W, A, S, D</strong> or <strong>Arrow Keys</strong> &nbsp;|&nbsp;
-            Bomb: <strong>Spacebar</strong> &nbsp;|&nbsp;
-            Strategy: <strong>1-5</strong>
+            Move: <strong>W, A, S, D</strong> or <strong>Arrows</strong> &nbsp;|&nbsp;
+			Bomb: <strong>Spacebar</strong> &nbsp;|&nbsp;
+			Use Weapon: <strong>E</strong> or <strong>Shift+Space</strong> &nbsp;|&nbsp;
+			Strategy: <strong>1-5</strong>
         </div>
 
         <!-- Optional D-Pad for mouse testing -->
@@ -575,72 +616,79 @@
             entitiesLayerEl.appendChild(entEl);
         }
 
-        // 8. RENDER PLAYERS
-        function renderPlayers(playerLayer) {
-            playersLayerEl.innerHTML = "";
-            if (!playerLayer) return;
+		function renderPlayers(playerLayer) {
+			playersLayerEl.innerHTML = "";
+			if (!playerLayer) return;
 
-            let playerList = [];
+			let playerList = [];
 
-            // Parse array vs dictionary-style PlayerLayer (e.g., [{"2,1": {"Id":"P1", "Direction":"right"}}])
-            if (Array.isArray(playerLayer)) {
-                playerLayer.forEach((item, idx) => {
-                    if (item.x !== undefined || item.X !== undefined) {
-                        playerList.push(item);
-                    } else if (typeof item === "object") {
-                        Object.keys(item).forEach(coordKey => {
-                            const [x, y] = coordKey.split(",").map(Number);
-                            playerList.push({
-                                x: x,
-                                y: y,
-                                ...item[coordKey]
-                            });
-                        });
-                    }
-                });
-            } else if (typeof playerLayer === "object") {
-                Object.keys(playerLayer).forEach(coordKey => {
-                    const [x, y] = coordKey.split(",").map(Number);
-                    playerList.push({
-                        x: x,
-                        y: y,
-                        ...playerLayer[coordKey]
-                    });
-                });
-            }
+			if (Array.isArray(playerLayer)) {
+				playerLayer.forEach((item) => {
+					if (item.x !== undefined || item.X !== undefined) {
+						playerList.push(item);
+					} else if (typeof item === "object") {
+						Object.keys(item).forEach(coordKey => {
+							const [x, y] = coordKey.split(",").map(Number);
+							playerList.push({ x, y, ...item[coordKey] });
+						});
+					}
+				});
+			} else if (typeof playerLayer === "object") {
+				Object.keys(playerLayer).forEach(coordKey => {
+					const [x, y] = coordKey.split(",").map(Number);
+					playerList.push({ x, y, ...playerLayer[coordKey] });
+				});
+			}
 
-            playerCountEl.textContent = playerList.length;
-            let foundMe = false;
+			playerCountEl.textContent = playerList.length;
+			let foundMe = false;
 
-            playerList.forEach((player, index) => {
-                const id = player.id || player.Id || `P${index + 1}`;
-                const name = player.name || player.Name || id;
-                const x = player.x !== undefined ? player.x : player.X;
-                const y = player.y !== undefined ? player.y : player.Y;
-                const isMe = (myConnectionId && id === myConnectionId) || (!foundMe && playerList.length === 1);
+			playerList.forEach((player, index) => {
+				const id = player.id || player.Id || `P${index + 1}`;
+				const name = player.name || player.Name || id;
+				const x = player.x !== undefined ? player.x : player.X;
+				const y = player.y !== undefined ? player.y : player.Y;
+				const isMe = (myConnectionId && id === myConnectionId) || (!foundMe && playerList.length === 1);
+				const isAlive = player.isAlive !== undefined ? player.isAlive : (player.IsAlive !== undefined ? player.IsAlive : true);
+				const lives = player.Lives !== undefined ? player.Lives : (player.lives !== undefined ? player.lives : 1);
+				const hasShield = player.HasShield || player.hasShield || false;
+				const weaponEmoji = player.WeaponEmoji || player.weaponEmoji || "";
+				const weaponUses = player.WeaponUses !== undefined ? player.WeaponUses : (player.weaponUses || 0);
 
-                const isAlive = player.isAlive !== undefined ? player.isAlive : (player.IsAlive !== undefined ? player.IsAlive : true);
+				if (isMe) {
+					foundMe = true;
+					myNameEl.textContent = name + (isAlive ? "" : " (DEAD)");
+					myPosEl.textContent = `(${x}, ${y})`;
+				}
 
-                if (isMe) {
-                    foundMe = true;
-                    myNameEl.textContent = name + (isAlive ? "" : " (DEAD)");
-                    myPosEl.textContent = `(${x}, ${y})`;
-                }
+				if (!isAlive) return;
 
-                // Do not render dead players on the board
-                if (!isAlive) return;
+				const playerEl = document.createElement("div");
+				playerEl.className = "player" + (isMe ? " is-me" : "") + (hasShield ? " has-shield" : "");
+				playerEl.style.backgroundColor = getPlayerColor(id);
+				playerEl.style.left = (x * TILE_SIZE + 4) + "px";
+				playerEl.style.top = (y * TILE_SIZE + 4) + "px";
+				playerEl.textContent = name.slice(-2).toUpperCase();
+				playerEl.title = `${name} (${x}, ${y}) | Lives: ${lives}`;
 
-                const playerEl = document.createElement("div");
-                playerEl.className = "player" + (isMe ? " is-me" : "");
-                playerEl.style.backgroundColor = getPlayerColor(id);
-                playerEl.style.left = (x * TILE_SIZE + 4) + "px";
-                playerEl.style.top = (y * TILE_SIZE + 4) + "px";
-                playerEl.textContent = name.slice(-2).toUpperCase();
-                playerEl.title = `${name} (${x}, ${y})`;
+				// Weapon badge above the player
+				if (weaponEmoji) {
+					const weaponEl = document.createElement("div");
+					weaponEl.className = "player-weapon";
+					weaponEl.textContent = `${weaponEmoji}${weaponUses > 0 ? " " + weaponUses : ""}`;
+					playerEl.appendChild(weaponEl);
+				}
 
-                playersLayerEl.appendChild(playerEl);
-            });
-        }
+				// Lives badge below the player
+				const livesEl = document.createElement("div");
+				livesEl.className = "player-info";
+				livesEl.style.left = (x * TILE_SIZE + 4) + "px";
+				livesEl.style.top = (y * TILE_SIZE + 32) + "px";
+				livesEl.textContent = "❤️".repeat(Math.min(lives, 5)) + (lives > 5 ? ` x${lives}` : "");
+				playersLayerEl.appendChild(playerEl);
+				playersLayerEl.appendChild(livesEl);
+			});
+		}
 
         // 9. SEND MOVEMENT
         function sendMove(dx, dy) {
@@ -663,8 +711,17 @@
                 });
             }
         }
+		
+		// 11. WEAPON USE ACTION
+		function useWeapon() {
+			if (connection && connection.state === signalR.HubConnectionState.Connected) {
+				connection.invoke("UseWeapon").catch(err => {
+					console.error("UseWeapon error:", err);
+				});
+			}
+		}
 
-        // 11. KEYBOARD LISTENER
+        // 12. KEYBOARD LISTENER
         window.addEventListener("keydown", (event) => {
             // Strategy selection keys: 1, 2, 3, 4, 5
             if (event.key === "1") {
@@ -690,10 +747,23 @@
             }
 
             if (event.code === "Space" || event.key === " ") {
-                event.preventDefault();
-                placeBomb();
-                return;
-            }
+				event.preventDefault();
+				if (event.shiftKey) {
+					// Shift + Space = use weapon
+					useWeapon();
+				} else {
+					// Space = place bomb
+					placeBomb();
+				}
+				return;
+			}
+			
+			// 'E' key also uses weapon
+			if (event.key.toLowerCase() === "e") {
+				event.preventDefault();
+				useWeapon();
+				return;
+			}
 
             let dx = 0;
             let dy = 0;
