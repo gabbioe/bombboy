@@ -357,6 +357,27 @@
             background: #34495e;
             transform: scale(0.95);
         }
+		
+		/* Bottom info strip under each player (lives + bombs + weapon uses) */
+		.player-info {
+			position: absolute;
+			display: flex;
+			gap: 2px;
+			align-items: center;
+			font-size: 10px;
+			font-weight: bold;
+			color: #fff;
+			text-shadow: 0 1px 2px #000, 0 0 3px #000;
+			pointer-events: none;
+			white-space: nowrap;
+			z-index: 5;
+		}
+		.player-info .info-chip {
+			background: rgba(0,0,0,0.55);
+			border-radius: 3px;
+			padding: 0 3px;
+			line-height: 13px;
+		}
     </style>
 </head>
 <body>
@@ -492,6 +513,12 @@
                         renderPlayers(parsed);
                     }
                 }
+				if (parsed && parsed.AllPlayersDead === true) {
+					showRestartPopup();
+				} else if (parsed && parsed.AllPlayersDead === false && restartPopupShown) {
+					hideRestartPopup();
+				}				
+				
             } catch (err) {
                 console.error("Failed to parse server payload:", err);
             }
@@ -615,7 +642,8 @@
 
             entitiesLayerEl.appendChild(entEl);
         }
-
+		
+		// 8. RENDER PLAYERS
 		function renderPlayers(playerLayer) {
 			playersLayerEl.innerHTML = "";
 			if (!playerLayer) return;
@@ -650,10 +678,12 @@
 				const y = player.y !== undefined ? player.y : player.Y;
 				const isMe = (myConnectionId && id === myConnectionId) || (!foundMe && playerList.length === 1);
 				const isAlive = player.isAlive !== undefined ? player.isAlive : (player.IsAlive !== undefined ? player.IsAlive : true);
-				const lives = player.Lives !== undefined ? player.Lives : (player.lives !== undefined ? player.lives : 1);
+				const lives = player.Lives !== undefined ? player.Lives : (player.lives !== undefined ? player.lives : 3);
 				const hasShield = player.HasShield || player.hasShield || false;
 				const weaponEmoji = player.WeaponEmoji || player.weaponEmoji || "";
 				const weaponUses = player.WeaponUses !== undefined ? player.WeaponUses : (player.weaponUses || 0);
+				const bombCount = player.BombCount !== undefined ? player.BombCount : (player.bombCount || 1);
+				const bombRange = player.BombRange !== undefined ? player.BombRange : (player.bombRange || 1);
 
 				if (isMe) {
 					foundMe = true;
@@ -679,15 +709,44 @@
 					playerEl.appendChild(weaponEl);
 				}
 
-				// Lives badge below the player
-				const livesEl = document.createElement("div");
-				livesEl.className = "player-info";
-				livesEl.style.left = (x * TILE_SIZE + 4) + "px";
-				livesEl.style.top = (y * TILE_SIZE + 32) + "px";
-				livesEl.textContent = "❤️".repeat(Math.min(lives, 5)) + (lives > 5 ? ` x${lives}` : "");
 				playersLayerEl.appendChild(playerEl);
-				playersLayerEl.appendChild(livesEl);
+
+				// Info strip below the player: ❤️❤️❤️ | 💣2 | 🧨3
+				const infoEl = document.createElement("div");
+				infoEl.className = "player-info";
+				infoEl.style.left = (x * TILE_SIZE + 4) + "px";
+				infoEl.style.top = (y * TILE_SIZE + 34) + "px";
+
+				const livesChip = document.createElement("span");
+				livesChip.className = "info-chip";
+				livesChip.textContent = "❤️".repeat(Math.max(0, lives));
+				infoEl.appendChild(livesChip);
+
+				const bombChip = document.createElement("span");
+				bombChip.className = "info-chip";
+				bombChip.textContent = `💣${bombCount}`;
+				bombChip.title = `Max bombs: ${bombCount}, Range: ${bombRange}`;
+				infoEl.appendChild(bombChip);
+
+				if (weaponEmoji && weaponUses > 0) {
+					const wChip = document.createElement("span");
+					wChip.className = "info-chip";
+					wChip.textContent = `${weaponEmoji}${weaponUses}`;
+					infoEl.appendChild(wChip);
+				}
+
+				playersLayerEl.appendChild(infoEl);
 			});
+
+			// Trigger restart popup if everyone is dead
+			if (playerList.length > 0 && playerList.every(p => {
+				const alive = p.isAlive !== undefined ? p.isAlive : p.IsAlive;
+				return alive === false;
+			})) {
+				showRestartPopup();
+			} else {
+				if (restartPopupShown) hideRestartPopup();
+			}
 		}
 
         // 9. SEND MOVEMENT

@@ -45,7 +45,9 @@ public class Player
             ["HasShield"] = HasShield,
             ["ShieldDuration"] = ShieldDuration,
             ["WeaponEmoji"] = CurrentWeapon?.GetEmoji() ?? "",
-            ["WeaponUses"] = CurrentWeapon?.UsesCount ?? 0
+            ["WeaponUses"] = CurrentWeapon?.UsesCount ?? 0,
+            ["BombCount"] = BombCount,
+            ["BombRange"] = BombRange
         };
     }
 
@@ -57,5 +59,29 @@ public class Player
     public void ApplyPowerUp(IExplosionStrategy newStrategy)
     {
         ActiveBombStrategy = newStrategy;
+    }
+
+    /// <summary>
+    /// Applies damage to this player. Handles shield, lives, and death.
+    /// Returns true if the player died (lives reached 0).
+    /// </summary>
+    public bool TakeDamage()
+    {
+        // shield absorbs one hit entirely
+        if (HasShield)
+        {
+            HasShield = false;
+            ShieldDuration = 0;
+            return false;
+        }
+
+        Lives--;
+        if (Lives <= 0)
+        {
+            Lives = 0;
+            IsAlive = false;
+            return true;
+        }
+        return false;
     }
 }

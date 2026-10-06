@@ -69,15 +69,7 @@ namespace BombBoy.Models
                 {
                     if (p.IsAlive && p.X == bx && p.Y == by)
                     {
-                        if (p.HasShield) // shield logic
-                        {
-                            p.HasShield = false; // shield absorbs the hit
-                            Console.WriteLine($"Player {p.Name}'s shield absorbed the blast!");
-                        }
-                        else
-                        {
-                            p.IsAlive = false;
-                        }
+                        p.TakeDamage();
                     }
                 }
 
@@ -126,9 +118,7 @@ namespace BombBoy.Models
 
                         if (ActiveBlasts.Any(b => b.X == Players[PlayerId].X && b.Y == Players[PlayerId].Y))
                         {
-                            //Players[PlayerId].IsAlive = false;
-                            if (player.HasShield) player.HasShield = false;
-                            else player.IsAlive = false;
+                            player.TakeDamage();
                         }
                         switch (dx, dy)
                         {
@@ -177,6 +167,10 @@ namespace BombBoy.Models
             return false;
         }
 
+        public bool AreAllPlayersDead()
+        {
+            return Players.Count > 0 && Players.Values.All(p => !p.IsAlive);
+        }
 
         public bool PlaceBomb(Player player)
         {
@@ -346,8 +340,7 @@ namespace BombBoy.Models
                 var targetPlayer = Players.Values.FirstOrDefault(p => p.X == targetX && p.Y == targetY && p.IsAlive);
                 if (targetPlayer != null)
                 {
-                    if (targetPlayer.HasShield) targetPlayer.HasShield = false;
-                    else targetPlayer.IsAlive = false;
+                    targetPlayer.TakeDamage();
                 }
                 else
                 {
@@ -434,12 +427,13 @@ namespace BombBoy.Models
             {
                 ["MapLayer"] = JsonNode.Parse(GameMap.ReturnMapToJSon()),
                 ["EntityLayer"] = JsonNode.Parse(GetEntityJson()),
-                ["PlayerLayer"] = JsonNode.Parse(GetPlayerJson())
+                ["PlayerLayer"] = JsonNode.Parse(GetPlayerJson()),
+                ["AllPlayersDead"] = AreAllPlayersDead(),
+                ["PlayerCount"] = Players.Count
             };
 
             var options = new JsonSerializerOptions { WriteIndented = ToConsole };
             return CombinedJson.ToJsonString(options);
-            
         }
 
         //generates the Top Layer(entities & items)

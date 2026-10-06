@@ -9,7 +9,7 @@ Install the game files from Github, and launch "Program.cs" in the "backend" fol
 One game session can support 1 to 4 players. After Bombboy is launched, players on the same network as the host can connect using the same localhost link.
 
 ## Game controls
-Players move around with the arrow or wasd keys, and can place bombs with the space key.
+Players move around with the arrow or wasd keys, and can place bombs with the space key, or use picked up items with e or shift+space keys.
 
 # How to win
 Remain the last player alive by avoiding blast radius of bombs and exploding all other players.
