@@ -6,7 +6,7 @@ namespace BombBoy.Models.Tiles
 {
     public class IndestructableTile : Tile
     {
-        public IndestructableTile(string col) :base()
+        public IndestructableTile(string col) :base(col)
         {
             _colour = col;
             _jsonFormating = "X";

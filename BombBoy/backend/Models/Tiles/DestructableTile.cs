@@ -6,10 +6,12 @@ namespace BombBoy.Models.Tiles
 {
     public class DestructableTile : Tile
     {
-        public DestructableTile(string col) :base()
+        public int Health;
+        public DestructableTile(string col, int health = 1) :base(col)
         {
             _colour = col;
             _jsonFormating = "B";
+            Health = health;
         }
         public override bool CanWalk()
         {
@@ -18,7 +20,10 @@ namespace BombBoy.Models.Tiles
 
         public override bool DoDamage()
         {
-            return true;
+            Health--;
+            if (Health == 0)
+                return true;
+            return false;
         }
     }
 }

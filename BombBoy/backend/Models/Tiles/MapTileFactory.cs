@@ -7,17 +7,26 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace BombBoy.Models.TileFactories
+namespace BombBoy.Models.Tiles
 {
-    public interface IMapTileFactory
+    public static class MapTileFactory
     {
-        public abstract FloorTile CreateFloorTile();
+        public static Tile CreateFloorTile()
+        {
+            return new Tile("#dff9fb");
+        }
 
-        public abstract IndestructableTile CreateIndestructableTile();
+        public static IndestructableTile CreateIndestructableTile()
+        {
+            return new IndestructableTile("d35400");
+        }
 
-        public abstract DestructableTile CreateDestructableTile();
+        public static DestructableTile CreateDestructableTile()
+        {
+            return new DestructableTile("5c6b73");
+        }
 
-        public virtual string GetFactoryProductColours()
+        public static string GetFactoryProductColours()
         {
             var result = new JsonObject
             {
