@@ -1,4 +1,5 @@
-﻿using BombBoy.Models.Tiles;
+﻿using Bombboy.Models.Tiles;
+using BombBoy.Models.Tiles;
 using System;
 using System.Collections.Generic;
 using System.Reflection.Metadata.Ecma335;
@@ -26,6 +27,12 @@ namespace BombBoy.Models.Tiles
             return new DestructableTile("5c6b73");
         }
 
+        public static WaterTile CreateWaterTile()
+        {
+            return new WaterTile("d4f1f9");
+        }
+
+
         public static string GetFactoryProductColours()
         {
             var result = new JsonObject
@@ -33,6 +40,7 @@ namespace BombBoy.Models.Tiles
                 ["floortile"] = CreateFloorTile().Colour(),
                 ["indestructableTile"] = CreateIndestructableTile().Colour(),
                 ["destructableTile"] = CreateDestructableTile().Colour(),
+                ["WaterTile"] = CreateWaterTile().Colour(),
             };
             
             return JsonSerializer.Serialize(result);

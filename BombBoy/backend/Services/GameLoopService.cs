@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.SignalR;
-using BombBoy.Models.TileFactories;
 
 namespace BombBoy.Services;
 
@@ -20,7 +19,7 @@ public class GameLoopService : BackgroundService
         const float deltaTime = 0.05f;
 
         //Asuminu cia vyksta viena karta tik kai paleidi game, jei ne tai negerai :/
-        _gameManager.GenerateMap(7, 7, 50);
+        _gameManager.GenerateMap(7, 7, 50, 10);
         while (!stoppingToken.IsCancellationRequested)
         {
 

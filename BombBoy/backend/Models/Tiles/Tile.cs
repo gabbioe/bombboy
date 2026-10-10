@@ -9,11 +9,15 @@ namespace BombBoy.Models.Tiles
     {
         protected string _jsonFormating;
         protected string _colour;
+
+        public string Type;
         public Tile(string col)
         {
             _colour = col;
             _jsonFormating = "_";
+            Type = "Tile";
         }
+
         public virtual bool CanWalk()
         {
             return true;

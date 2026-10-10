@@ -250,6 +250,23 @@
             font-size: 18px;
         }
 
+        /* Water Tile (W) */
+        .tile-water {
+            background: linear-gradient(135deg, #2980b9 0%, #3498db 100%);
+            border: 1px solid #1a5276;
+            border-radius: 4px;
+            box-shadow: inset 1px 1px 2px rgba(255, 255, 255, 0.3), inset -1px -1px 2px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .tile-water::after {
+            content: "🌊";
+            font-size: 16px;
+        }
+
+
         /* Entity Layer (Z-Index above Map Tile Layer) */
         #entities-layer {
             position: absolute;
@@ -586,6 +603,9 @@
                     } else if (tileType === "B") {
                         tileEl.classList.add("tile-block");
                         tileEl.title = "Block";
+                    } else if (tileType === "W" || tileType === "w") {
+                        tileEl.classList.add("tile-water");
+                        tileEl.title = "Water";
                     } else {
                         tileEl.classList.add("tile-floor");
                     }

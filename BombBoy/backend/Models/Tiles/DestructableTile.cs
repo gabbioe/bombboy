@@ -12,6 +12,7 @@ namespace BombBoy.Models.Tiles
             _colour = col;
             _jsonFormating = "B";
             Health = health;
+            Type = "DestructableTile";
         }
         public override bool CanWalk()
         {
@@ -21,7 +22,7 @@ namespace BombBoy.Models.Tiles
         public override bool DoDamage()
         {
             Health--;
-            if (Health == 0)
+            if (Health <= 0)
                 return true;
             return false;
         }

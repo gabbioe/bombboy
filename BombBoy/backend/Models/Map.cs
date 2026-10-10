@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using BombBoy.Models;
-using BombBoy.Models.TileFactories;
 using BombBoy.Models.Tiles;
 using System;
 using System.ComponentModel.DataAnnotations;
@@ -21,10 +20,7 @@ public class Map
     public event Action<int, int, int>? OnBlastSpawned;
     public event Action<int, int>? OnBlockDestroyed;
 
-    private IMapTileFactory tileFactory;
 
-
-    
 
     /// <summary>
     /// Generates the map
@@ -33,9 +29,8 @@ public class Map
     /// <param name="size_Y"></param>
     /// <param name="BlockSpawnChance"> kokios tikimybes kad bus sunaikinamas blokas is 10 (pvz 1 is 10 tai 10% kad laisva vieta bus blokas)</param>
     /// <exception cref="ArgumentException"></exception>
-    public Map(int size_X, int size_Y, int BlockSpawnChance, IMapTileFactory factory)
+    public Map(int size_X, int size_Y, int BlockSpawnChance, int WaterSpawnChance)
     {
-        tileFactory = factory;
 
         if (size_X < 5 || size_Y < 5)
         {
@@ -53,13 +48,13 @@ public class Map
         
         //stackas jei apdorosim rejoininima, jei ne galime tsg masyva turet
         
-        generateMapGood(BlockSpawnChance);
+        generateMapGood(BlockSpawnChance, WaterSpawnChance);
         //GenerateMapSimple();
     }
 
-    private void generateMapGood(int BlockSpawnChance)
+    private void generateMapGood(int BlockSpawnChance, int WaterSpawnChance)
     {
-        Console.WriteLine("Generuoju mapa!");
+        //Console.WriteLine("Generuoju mapa!");
 
         Random rand = new Random();
         MapTileGrid = new Tile[Size_X, Size_Y];
@@ -69,22 +64,24 @@ public class Map
             {
                 //borderiai
                 if (i == 0 || i == Size_X - 1 || j == 0 || j == Size_Y - 1)
-                    MapTileGrid[i, j] = tileFactory.CreateIndestructableTile();
+                    MapTileGrid[i, j] = MapTileFactory.CreateIndestructableTile();
                 //kas antra bloka pazymi kad butu 
                 if (i % 2 == 0 && j % 2 == 0)
-                    MapTileGrid[i, j] = tileFactory.CreateIndestructableTile();
+                    MapTileGrid[i, j] = MapTileFactory.CreateIndestructableTile();
                 //Tikrina ar nera kampuose kur playeriai spawninasi 
                 if (MapTileGrid[i, j] == null)
                 {
                     if ((i > 2 || j > 2) && (i < Size_X - 3 || j > 2) && (i > 2 || j < Size_Y - 3) && (i < Size_X - 3 || j < Size_Y - 3))
                     {
                         if (rand.Next(0, 100) < BlockSpawnChance)
-                            MapTileGrid[i, j] = tileFactory.CreateDestructableTile();
+                            MapTileGrid[i, j] = MapTileFactory.CreateDestructableTile();
+                        else if (rand.Next(0, 100) < WaterSpawnChance)
+                            MapTileGrid[i, j] = MapTileFactory.CreateWaterTile();
                         else
-                            MapTileGrid[i, j] = tileFactory.CreateFloorTile();
+                            MapTileGrid[i, j] = MapTileFactory.CreateFloorTile();
                     }
                     else
-                        MapTileGrid[i, j] = tileFactory.CreateFloorTile();
+                        MapTileGrid[i, j] = MapTileFactory.CreateFloorTile();
                 }
             }
         }
@@ -99,7 +96,7 @@ public class Map
         if (!IsValidCoord(x, y)) return;
         if (MapTileGrid[x, y] is DestructableTile)
         {
-            MapTileGrid[x, y] = tileFactory.CreateFloorTile();
+            MapTileGrid[x, y] = MapTileFactory.CreateFloorTile();
             OnBlockDestroyed?.Invoke(x, y); // trigger item spawn
         }
     }
@@ -123,7 +120,7 @@ public class Map
         // 3. If it's a destructible block, damage it and turn it into floor
         if (MapTileGrid[x, y].DoDamage())
         {
-            MapTileGrid[x, y] = tileFactory.CreateFloorTile();
+            MapTileGrid[x, y] = MapTileFactory.CreateFloorTile();
             // notify Match to potentially spawn an item
             OnBlockDestroyed?.Invoke(x, y);
         }
@@ -142,10 +139,11 @@ public class Map
             for (int j = 0; j < Size_Y; j++)
             {
                //Console.WriteLine($"i == {i} j == {j} Type == {MapGrid[i, j].Type}");
-               result += MapTileGrid[i, j];
+               result += MapTileGrid[i, j].ToString();
             }
             result += "\n";
         }
+        //Console.WriteLine(result);
         return result;
     }
 
@@ -162,7 +160,6 @@ public class Map
                 gridArray[i][j] = MapTileGrid[i, j].ToString();
             }
         }
-
         // Serialize to a JSON string
         return JsonSerializer.Serialize(gridArray);
     }

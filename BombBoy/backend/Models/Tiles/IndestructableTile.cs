@@ -10,6 +10,7 @@ namespace BombBoy.Models.Tiles
         {
             _colour = col;
             _jsonFormating = "X";
+            Type = "IndestructableTile";
         }
         public override bool CanWalk()
         {

@@ -5,22 +5,27 @@ using System.Text;
 
 namespace Bombboy.Models.Tiles
 {
-    internal class WaterTile : Tile
+    public class WaterTile : Tile
     {
         public WaterTile(string col) :base(col)
         {
             _colour = col;
             _jsonFormating = "W";
+            Type = "WaterTile";
         }
 
         public override bool CanWalk()
         {
-            return base.CanWalk();
+            return true;
         }
 
         public override bool DoDamage()
         {
-            return base.DoDamage();
+            return false;
+        }
+        public static bool CanDrown()
+        {
+            return true;
         }
     }
 }
