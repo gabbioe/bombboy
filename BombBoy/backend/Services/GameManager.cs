@@ -1,6 +1,5 @@
 using BombBoy.Models;
 using BombBoy.Models.Strategies;
-using BombBoy.Models.TileFactories;
 using System.Collections.Concurrent;
 
 namespace BombBoy.Services;
@@ -11,8 +10,6 @@ public class GameManager
     private readonly object _lock = new();
 
     private readonly Match _Match = new Match();
-
-    public readonly IMapTileFactory _Factory = new FrozenMapTileFactory();
 
 
     //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -39,11 +36,11 @@ public class GameManager
         
     }
 
-    public void GenerateMap(int x, int y, int percentage)
+    public void GenerateMap(int x, int y, int BreakableBlockSpawnChance, int waterTileSpawnChance)
     {
         lock (_lock)
         {
-            _Match.GenerateMap(x,x, percentage, _Factory);
+            _Match.GenerateMap(x,x, BreakableBlockSpawnChance, waterTileSpawnChance);
             _Match.GetMapStringFormat();
         }
         

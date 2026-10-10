@@ -1,7 +1,6 @@
 using BombBoy.Models.GridEntities;
 using BombBoy.Models.ItemFactories;
 using BombBoy.Models.Items;
-using BombBoy.Models.TileFactories;
 using BombBoy.Models.Tiles;
 using System;
 using System.Collections.Generic;
@@ -13,6 +12,8 @@ namespace BombBoy.Models
 {
     public class Match 
     {
+        public event EventHandler OnDrowning;
+
         private int PlayerCount = 0;
         private Map GameMap;
         private Dictionary<(int x, int y), List<Entity>> Entities = new();
@@ -48,10 +49,10 @@ namespace BombBoy.Models
         {
             return GameMap.ReturnMapToConsole();
         }
-        public void GenerateMap(int x, int y, int percentage, IMapTileFactory factory){
+        public void GenerateMap(int x, int y, int BlockSpawnChance, int WaterSpawnChance){
 
-            //Console.WriteLine(factory.GetFactoryProductColours());
-            GameMap = new Map(x, y, percentage, factory);
+            GameMap = new Map(x, y, BlockSpawnChance, WaterSpawnChance);
+            Console.WriteLine(GameMap.ReturnMapToJSon);
             // subscribe to Block Destroyed event to spawn items
             GameMap.OnBlockDestroyed += OnBlockDestroyed;
             GameMap.OnBlastSpawned += (bx, by, durationTicks) =>
@@ -130,6 +131,8 @@ namespace BombBoy.Models
                         // check for item pickup
                         CheckPickups(player);
                         return true;
+
+
                     }
                     return false;
                 }
@@ -137,6 +140,7 @@ namespace BombBoy.Models
             }
             throw new ArgumentException($"Player with id {PlayerId} doesn't exist");            
         }
+
 
         public int[] AddPlayer(Player newPlayer)
         {
@@ -215,6 +219,10 @@ namespace BombBoy.Models
                         player.HasShield = false;
                     }
                 }
+                if (GameMap.GetTile(player.X, player.Y).Type == "WaterTile")
+                {
+                    player.TakeDamage();
+                }
             }            
             //update bombs
             for (int i = ActiveBombs.Count - 1; i >= 0; i--)
@@ -261,7 +269,7 @@ namespace BombBoy.Models
             int x = _rand.Next(1, GameMap.GetX() - 1);
             int y = _rand.Next(1, GameMap.GetY() - 1);
 
-            if (GameMap.GetTile(x, y) is FloorTile && !_items.Any(i => i.X == x && i.Y == y))
+            if (GameMap.GetTile(x, y).Type == "Tile" && !_items.Any(i => i.X == x && i.Y == y))
             {
                 SpawnRandomItem(x, y);
             }

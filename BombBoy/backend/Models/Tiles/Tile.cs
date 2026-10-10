@@ -5,14 +5,29 @@ using System.Text;
 
 namespace BombBoy.Models.Tiles
 {
-    abstract public class Tile
+    public class Tile
     {
         protected string _jsonFormating;
         protected string _colour;
-        public abstract bool CanWalk();
+
+        public string Type;
+        public Tile(string col)
+        {
+            _colour = col;
+            _jsonFormating = "_";
+            Type = "Tile";
+        }
+
+        public virtual bool CanWalk()
+        {
+            return true;
+        }
 
         //tarkime grazina ar mire
-        public abstract bool DoDamage();
+        public virtual bool DoDamage()
+        {
+            return false;
+        }
 
         //returns how to colour the block in the Client 
         //(kolkas paprastas, veliau gal pilnai .css stuff ar image jei noresim
