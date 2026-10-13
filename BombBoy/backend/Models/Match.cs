@@ -1,3 +1,4 @@
+using Bombboy.Models.Tiles;
 using BombBoy.Models.GridEntities;
 using BombBoy.Models.ItemFactories;
 using BombBoy.Models.Items;
@@ -12,7 +13,6 @@ namespace BombBoy.Models
 {
     public class Match 
     {
-        public event EventHandler OnDrowning;
 
         private int PlayerCount = 0;
         private Map GameMap;
@@ -219,9 +219,10 @@ namespace BombBoy.Models
                         player.HasShield = false;
                     }
                 }
-                if (GameMap.GetTile(player.X, player.Y).Type == "WaterTile")
+                if (GameMap.GetTile(player.X, player.Y) is WaterTile)
                 {
-                    player.TakeDamage();
+                    if (((WaterTile)GameMap.GetTile(player.X, player.Y)).CanDrown())
+                        player.TakeDamage();
                 }
             }            
             //update bombs

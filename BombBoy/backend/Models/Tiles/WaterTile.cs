@@ -23,7 +23,7 @@ namespace Bombboy.Models.Tiles
         {
             return false;
         }
-        public static bool CanDrown()
+        public bool CanDrown()
         {
             return true;
         }
