@@ -33,6 +33,7 @@ public class Map
     public Map(int size_X, int size_Y, int BlockSpawnChance, int WaterSpawnChance, MapTileFactory factory)
     {
         Factory = factory;
+        
         if (size_X < 5 || size_Y < 5)
         {
             throw new ArgumentException($"Both Size X ({size_X}) and Size Y ({size_Y}) must be at least 5.");

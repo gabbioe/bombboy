@@ -22,12 +22,12 @@ namespace BombBoy.Models.Tiles
             return new BasicTile("d35400", "X", "IndestructableTile", false);
         }
 
-        public DestructableTile CreateDestructableTile()
+        public BasicTile CreateDestructableTile()
         {
             return new DestructableTile("5c6b73", "B", "DestructableTile", false);
         }
 
-        public WaterTile CreateWaterTile()
+        public BasicTile CreateWaterTile()
         {
             return new WaterTile("d4f1f9", "W", "WaterTile", true);
         }
