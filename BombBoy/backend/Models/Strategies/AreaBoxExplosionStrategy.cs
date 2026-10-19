@@ -27,7 +27,7 @@ public class AreaBoxExplosionStrategy : IExplosionStrategy
                 var tile = map.GetTile(targetX, targetY);
 
                 // Skip indestructible blocks
-                if (tile is IndestructableTile)
+                if (tile.Type == "IndestructableTile")
                     continue;
 
                 map.SpawnBlast(targetX, targetY);

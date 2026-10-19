@@ -5,22 +5,25 @@ using System.Text;
 
 namespace BombBoy.Models.Tiles
 {
-    public class Tile
+    public class BasicTile
     {
         protected string _jsonFormating;
         protected string _colour;
 
+        protected bool CanWalk;
+
         public string Type;
-        public Tile(string col)
+        public BasicTile(string col, string formating, string type, bool canWalk)
         {
             _colour = col;
-            _jsonFormating = "_";
-            Type = "Tile";
+            _jsonFormating = formating;
+            Type = type;
+            CanWalk = canWalk;
         }
 
-        public virtual bool CanWalk()
+        public virtual bool CanWalkTo()
         {
-            return true;
+            return CanWalk;
         }
 
         //tarkime grazina ar mire

@@ -51,7 +51,7 @@ namespace BombBoy.Models
         }
         public void GenerateMap(int x, int y, int BlockSpawnChance, int WaterSpawnChance){
 
-            GameMap = new Map(x, y, BlockSpawnChance, WaterSpawnChance);
+            GameMap = new Map(x, y, BlockSpawnChance, WaterSpawnChance, new MapTileFactory());
             Console.WriteLine(GameMap.ReturnMapToJSon);
             // subscribe to Block Destroyed event to spawn items
             GameMap.OnBlockDestroyed += OnBlockDestroyed;
@@ -381,7 +381,7 @@ namespace BombBoy.Models
                 while (GameMap.IsValidCoord(cx, cy) && range < maxRange)
                 {
                     var tile = GameMap.GetTile(cx, cy);
-                    if (tile is IndestructableTile) break;
+                    if (tile.Type == "IndestructableTile") break;
 
                     GameMap.SpawnBlast(cx, cy, 5);
                     if (tile is DestructableTile) break;

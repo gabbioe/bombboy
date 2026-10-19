@@ -52,7 +52,7 @@ public class FloodFillExplosionStrategy : IExplosionStrategy
                         var nextTile = map.GetTile(nextX, nextY);
 
                         // Stop propagation if next tile is indestructible
-                        if (nextTile is IndestructableTile)
+                        if (nextTile.Type == "IndestructableTile")
                         {
                             continue;
                         }

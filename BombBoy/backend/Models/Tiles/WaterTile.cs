@@ -5,18 +5,13 @@ using System.Text;
 
 namespace Bombboy.Models.Tiles
 {
-    public class WaterTile : Tile
+    public class WaterTile : BasicTile
     {
-        public WaterTile(string col) :base(col)
+        public WaterTile(string col, string formating, string type, bool canwalk) :base(col, formating, type, canwalk)
         {
-            _colour = col;
-            _jsonFormating = "W";
-            Type = "WaterTile";
-        }
-
-        public override bool CanWalk()
-        {
-            return true;
+            //_colour = col;
+            //_jsonFormating = "W";
+            //Type = "WaterTile";
         }
 
         public override bool DoDamage()

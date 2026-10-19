@@ -35,7 +35,7 @@ public class DiagonalExplosionStrategy : IExplosionStrategy
                 var tile = map.GetTile(targetX, targetY);
 
                 // Stop at indestructible blocks
-                if (tile is IndestructableTile)
+                if (tile.Type == "IndestructableTile")
                     break;
 
                 bool isDestructible = tile is DestructableTile;

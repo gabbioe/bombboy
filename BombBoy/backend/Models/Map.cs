@@ -15,11 +15,12 @@ public class Map
 
     private int Size_Y { get; set; }
 
-    private Tile[,] MapTileGrid;
+    private BasicTile[,] MapTileGrid;
 
     public event Action<int, int, int>? OnBlastSpawned;
     public event Action<int, int>? OnBlockDestroyed;
 
+    public MapTileFactory Factory;
 
 
     /// <summary>
@@ -29,9 +30,9 @@ public class Map
     /// <param name="size_Y"></param>
     /// <param name="BlockSpawnChance"> kokios tikimybes kad bus sunaikinamas blokas is 10 (pvz 1 is 10 tai 10% kad laisva vieta bus blokas)</param>
     /// <exception cref="ArgumentException"></exception>
-    public Map(int size_X, int size_Y, int BlockSpawnChance, int WaterSpawnChance)
+    public Map(int size_X, int size_Y, int BlockSpawnChance, int WaterSpawnChance, MapTileFactory factory)
     {
-
+        Factory = factory;
         if (size_X < 5 || size_Y < 5)
         {
             throw new ArgumentException($"Both Size X ({size_X}) and Size Y ({size_Y}) must be at least 5.");
@@ -57,36 +58,36 @@ public class Map
         //Console.WriteLine("Generuoju mapa!");
 
         Random rand = new Random();
-        MapTileGrid = new Tile[Size_X, Size_Y];
+        MapTileGrid = new BasicTile[Size_X, Size_Y];
         for (int i = 0; i < Size_X; i++)
         {
             for (int j = 0; j < Size_Y; j++)
             {
                 //borderiai
                 if (i == 0 || i == Size_X - 1 || j == 0 || j == Size_Y - 1)
-                    MapTileGrid[i, j] = MapTileFactory.CreateIndestructableTile();
+                    MapTileGrid[i, j] = Factory.CreateIndestructableTile();
                 //kas antra bloka pazymi kad butu 
                 if (i % 2 == 0 && j % 2 == 0)
-                    MapTileGrid[i, j] = MapTileFactory.CreateIndestructableTile();
+                    MapTileGrid[i, j] = Factory.CreateIndestructableTile();
                 //Tikrina ar nera kampuose kur playeriai spawninasi 
                 if (MapTileGrid[i, j] == null)
                 {
                     if ((i > 2 || j > 2) && (i < Size_X - 3 || j > 2) && (i > 2 || j < Size_Y - 3) && (i < Size_X - 3 || j < Size_Y - 3))
                     {
                         if (rand.Next(0, 100) < BlockSpawnChance)
-                            MapTileGrid[i, j] = MapTileFactory.CreateDestructableTile();
+                            MapTileGrid[i, j] = Factory.CreateDestructableTile();
                         else if (rand.Next(0, 100) < WaterSpawnChance)
-                            MapTileGrid[i, j] = MapTileFactory.CreateWaterTile();
+                            MapTileGrid[i, j] = Factory.CreateWaterTile();
                         else
-                            MapTileGrid[i, j] = MapTileFactory.CreateFloorTile();
+                            MapTileGrid[i, j] = Factory.CreateFloorTile();
                     }
                     else
-                        MapTileGrid[i, j] = MapTileFactory.CreateFloorTile();
+                        MapTileGrid[i, j] = Factory.CreateFloorTile();
                 }
             }
         }
     }
-    public Tile? GetTile(int x, int y)
+    public BasicTile? GetTile(int x, int y)
     {
         if (!IsValidCoord(x, y)) return null;
         return MapTileGrid[x, y];
@@ -96,14 +97,14 @@ public class Map
         if (!IsValidCoord(x, y)) return;
         if (MapTileGrid[x, y] is DestructableTile)
         {
-            MapTileGrid[x, y] = MapTileFactory.CreateFloorTile();
+            MapTileGrid[x, y] = Factory.CreateFloorTile();
             OnBlockDestroyed?.Invoke(x, y); // trigger item spawn
         }
     }
 
     public bool CheckIfCanMove(int x, int y)
     {
-        return MapTileGrid[x, y].CanWalk();
+        return MapTileGrid[x, y].CanWalkTo();
     }
 
     public bool IsValidCoord(int x, int y)
@@ -116,11 +117,11 @@ public class Map
         // 1. Boundary check
         if (!IsValidCoord(x, y)) return;
         // 2. Do not spawn blast on indestructible borders or pillars
-        if (MapTileGrid[x, y] is IndestructableTile) return;
+        if (MapTileGrid[x, y].Type == "IndestructableTile") return;
         // 3. If it's a destructible block, damage it and turn it into floor
         if (MapTileGrid[x, y].DoDamage())
         {
-            MapTileGrid[x, y] = MapTileFactory.CreateFloorTile();
+            MapTileGrid[x, y] = Factory.CreateFloorTile();
             // notify Match to potentially spawn an item
             OnBlockDestroyed?.Invoke(x, y);
         }

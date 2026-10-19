@@ -10,30 +10,30 @@ using System.Text.Json.Nodes;
 
 namespace BombBoy.Models.Tiles
 {
-    public static class MapTileFactory
+    public class MapTileFactory
     {
-        public static Tile CreateFloorTile()
+        public BasicTile CreateFloorTile()
         {
-            return new Tile("#dff9fb");
+            return new BasicTile("#dff9fb", "_", "Tile", true);
         }
 
-        public static IndestructableTile CreateIndestructableTile()
+        public BasicTile CreateIndestructableTile()
         {
-            return new IndestructableTile("d35400");
+            return new BasicTile("d35400", "X", "IndestructableTile", false);
         }
 
-        public static DestructableTile CreateDestructableTile()
+        public DestructableTile CreateDestructableTile()
         {
-            return new DestructableTile("5c6b73");
+            return new DestructableTile("5c6b73", "B", "DestructableTile", false);
         }
 
-        public static WaterTile CreateWaterTile()
+        public WaterTile CreateWaterTile()
         {
-            return new WaterTile("d4f1f9");
+            return new WaterTile("d4f1f9", "W", "WaterTile", true);
         }
 
 
-        public static string GetFactoryProductColours()
+        public string GetFactoryProductColours()
         {
             var result = new JsonObject
             {
