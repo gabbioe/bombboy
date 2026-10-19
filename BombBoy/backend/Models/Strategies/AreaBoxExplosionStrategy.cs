@@ -11,7 +11,7 @@ public class AreaBoxExplosionStrategy : IExplosionStrategy
 {
     public void Explode(Map map, int originX, int originY, int range)
     {
-        // Radius is capped between 1 and range (e.g. 1 gives a 3x3 box)
+        // Radius: minimum 1 (gives a 3x3 box), expands with higher range
         int radius = Math.Max(1, Math.Min(range, 2));
 
         for (int dx = -radius; dx <= radius; dx++)
@@ -25,6 +25,8 @@ public class AreaBoxExplosionStrategy : IExplosionStrategy
                     continue;
 
                 var tile = map.GetTile(targetX, targetY);
+                if (tile == null)
+                    continue;
 
                 // Skip indestructible blocks
                 if (tile.Type == "IndestructableTile")

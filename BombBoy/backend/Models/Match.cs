@@ -3,29 +3,29 @@ using BombBoy.Models.GridEntities;
 using BombBoy.Models.ItemFactories;
 using BombBoy.Models.Items;
 using BombBoy.Models.Tiles;
+using BombBoy.Models.Observer;
+using BombBoy.Models.Strategies;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
 namespace BombBoy.Models
 {
-    public class Match 
+    public class Match : IGameEventSubject
     {
+        private readonly List<IGameEventObserver> _observers = new();
 
         private int PlayerCount = 0;
         private Map GameMap;
         private Dictionary<(int x, int y), List<Entity>> Entities = new();
 
-        //public bool MatchHasStarted;
-
         private int[][] StartingPositions = new int[4][];
-
-        private List<int> AvailableStartingPositions = new List<int>{ 0, 1, 2, 3 };
+        private List<int> AvailableStartingPositions = new List<int> { 0, 1, 2, 3 };
         private List<Bomb> ActiveBombs = new();
         private List<Blast> ActiveBlasts = new();
-        //private Dictionary<string, Player> Players = new();
         private Dictionary<string, Player> Players = new Dictionary<string, Player>();
 
         // for items (weapons and powerups):
@@ -33,31 +33,74 @@ namespace BombBoy.Models
         private IAbstractItemFactory _itemFactory;
         private Random _rand = new Random();
 
-        /*
-        public Match()
-        {
-            //GenerateMap(7, 7, 50, TileFactory);
-            //MatchHasStarted = false;
-        }
-        */
         public Match(IAbstractItemFactory itemFactory = null)
         {
             _itemFactory = itemFactory ?? new BasicItemFactory();
+        }
+
+        #region Observer Pattern Implementation
+        public void Attach(IGameEventObserver observer)
+        {
+            if (!_observers.Contains(observer))
+                _observers.Add(observer);
+        }
+
+        public void Detach(IGameEventObserver observer)
+        {
+            _observers.Remove(observer);
+        }
+
+        public void NotifyPlayerDied(Player victim, Player? killer)
+        {
+            foreach (var obs in _observers.ToList())
+            {
+                obs.OnPlayerDied(victim, killer);
+            }
+        }
+
+        public void NotifyRoundEnded(Player? winner, int roundNumber, int totalRounds)
+        {
+            foreach (var obs in _observers.ToList())
+            {
+                obs.OnRoundEnded(winner, roundNumber, totalRounds);
+            }
+        }
+
+        public void NotifyMatchEnded(Player? champion, List<PlayerStats> finalStandings)
+        {
+            foreach (var obs in _observers.ToList())
+            {
+                obs.OnMatchEnded(champion, finalStandings);
+            }
+        }
+        #endregion
+
+        public bool ApplyDamage(Player victim, Player? killer)
+        {
+            if (!victim.IsAlive) return false;
+
+            bool died = victim.TakeDamage();
+            if (died)
+            {
+                NotifyPlayerDied(victim, killer);
+            }
+            return died;
         }
 
         public string GetMapStringFormat()
         {
             return GameMap.ReturnMapToConsole();
         }
-        public void GenerateMap(int x, int y, int BlockSpawnChance, int WaterSpawnChance){
 
+        public void GenerateMap(int x, int y, int BlockSpawnChance, int WaterSpawnChance, string mapType = "normal")
+        {
             GameMap = new Map(x, y, BlockSpawnChance, WaterSpawnChance, new MapTileFactory());
-            Console.WriteLine(GameMap.ReturnMapToJSon);
+            Console.WriteLine(GameMap.ReturnMapToJSon());
             // subscribe to Block Destroyed event to spawn items
             GameMap.OnBlockDestroyed += OnBlockDestroyed;
-            GameMap.OnBlastSpawned += (bx, by, durationTicks) =>
+            GameMap.OnBlastSpawnedWithOwner += (bx, by, durationTicks, ownerId) =>
             {
-                var blast = new Blast(bx, by);
+                var blast = new Blast(bx, by, 0.5f, ownerId);
                 if (!Entities.ContainsKey((bx, by)))
                     Entities[(bx, by)] = new List<Entity>();
                 Entities[(bx, by)].Add(blast);
@@ -70,7 +113,12 @@ namespace BombBoy.Models
                 {
                     if (p.IsAlive && p.X == bx && p.Y == by)
                     {
-                        p.TakeDamage();
+                        Player? killer = null;
+                        if (!string.IsNullOrEmpty(blast.OwnerId))
+                        {
+                            Players.TryGetValue(blast.OwnerId, out killer);
+                        }
+                        ApplyDamage(p, killer);
                     }
                 }
 
@@ -80,18 +128,11 @@ namespace BombBoy.Models
                     hitBomb.DoDamage();
                 }
             };
-            //full map info
-            /*
-            StartingPositions[0] = [1, 1];
-            StartingPositions[1] = [1, y ];
-            StartingPositions[2] = [x, 1];
-            StartingPositions[3] = [x, y];
-            */
+
             StartingPositions[0] = new[] { 1, 1 };
             StartingPositions[1] = new[] { 1, y };
             StartingPositions[2] = new[] { x, 1 };
             StartingPositions[3] = new[] { x, y };
-            
         }
 
         /// <summary>
@@ -117,14 +158,20 @@ namespace BombBoy.Models
                         player.X = x + dx;
                         player.Y = y + dy;
 
-                        if (ActiveBlasts.Any(b => b.X == Players[PlayerId].X && b.Y == Players[PlayerId].Y))
+                        var blast = ActiveBlasts.FirstOrDefault(b => b.X == player.X && b.Y == player.Y);
+                        if (blast != null)
                         {
-                            player.TakeDamage();
+                            Player? killer = null;
+                            if (!string.IsNullOrEmpty(blast.OwnerId))
+                            {
+                                Players.TryGetValue(blast.OwnerId, out killer);
+                            }
+                            ApplyDamage(player, killer);
                         }
                         switch (dx, dy)
                         {
-                            case (0, 1): player.Direction = "Up"; break;
-                            case (0, -1): player.Direction = "Down"; break;
+                            case (0, -1): player.Direction = "Up"; break;
+                            case (0, 1): player.Direction = "Down"; break;
                             case (1, 0): player.Direction = "Right"; break;
                             case (-1, 0): player.Direction = "Left"; break;
                         }
@@ -141,22 +188,72 @@ namespace BombBoy.Models
             throw new ArgumentException($"Player with id {PlayerId} doesn't exist");            
         }
 
-
-        public int[] AddPlayer(Player newPlayer)
+        public void ResetForNewRound(string mapType = "normal")
         {
-            if (PlayerCount < 4 )
+            ActiveBombs.Clear();
+            ActiveBlasts.Clear();
+            _items.Clear();
+            Entities.Clear();
+            _itemSpawnTimer = 0f;
+
+            if (mapType.ToLower() == "ice")
+            {
+                _itemFactory = new FrozenItemFactory();
+            }
+            else
+            {
+                _itemFactory = new BasicItemFactory();
+            }
+
+            GenerateMap(7, 7, 50, 10, mapType);
+
+            AvailableStartingPositions = new List<int> { 0, 1, 2, 3 };
+            foreach (var p in Players.Values)
+            {
+                p.IsAlive = true;
+                p.Lives = 1;
+                p.HasShield = false;
+                p.ShieldDuration = 0;
+                p.CurrentWeapon = null;
+                p.BombCount = 1;
+                p.BombRange = 1;
+                if (AvailableStartingPositions.Count > 0)
+                {
+                    p.StartingLocation = AvailableStartingPositions[0];
+                    AvailableStartingPositions.RemoveAt(0);
+                    int[] loc = StartingPositions[p.StartingLocation];
+                    p.X = loc[0];
+                    p.Y = loc[1];
+                }
+            }
+        }
+
+        public List<Player> GetAlivePlayers()
+        {
+            return Players.Values.Where(p => p.IsAlive).ToList();
+        }
+
+        public List<Player> GetAllPlayersList()
+        {
+            return Players.Values.ToList();
+        }
+
+        public int[]? AddPlayer(Player newPlayer)
+        {
+            if (PlayerCount < 4 && AvailableStartingPositions.Count > 0)
             {
                 Players[newPlayer.Id] = newPlayer;
-                int[] playerLocation = StartingPositions[AvailableStartingPositions[0]];
-                Players[newPlayer.Id].StartingLocation = AvailableStartingPositions[0];
-                AvailableStartingPositions.Remove(AvailableStartingPositions[0]);
-                Players[newPlayer.Id].X = playerLocation[0];
-                Players[newPlayer.Id].Y = playerLocation[1];
+                int locIndex = AvailableStartingPositions[0];
+                int[] playerLocation = StartingPositions[locIndex];
+                newPlayer.StartingLocation = locIndex;
+                AvailableStartingPositions.RemoveAt(0);
+                newPlayer.X = playerLocation[0];
+                newPlayer.Y = playerLocation[1];
                 PlayerCount++;
                 return playerLocation;
             }
 
-            throw new ArgumentException($"Game only supports up to 4 players");
+            return null;
         }
         
         public bool RemovePlayer(string playerId)
@@ -176,14 +273,17 @@ namespace BombBoy.Models
             return Players.Count > 0 && Players.Values.All(p => !p.IsAlive);
         }
 
-        public bool PlaceBomb(Player player)
+        public bool PlaceBomb(Player player, IExplosionStrategy? customStrategy = null)
         {
             int playerCurrentBombs = ActiveBombs.Count(b => b.OwnerId == player.Id);
             if (playerCurrentBombs >= player.BombCount)
                 return false;
             if (ActiveBombs.Any(b => b.X == player.X && b.Y == player.Y))
                 return false;
-            var bomb = new Bomb(player.X, player.Y, player.BombRange, player.ActiveBombStrategy, player.Id);
+
+            var strategy = customStrategy ?? player.ActiveBombStrategy ?? new ClassicCrossExplosionStrategy();
+            player.ActiveBombStrategy = strategy;
+            var bomb = new Bomb(player.X, player.Y, player.BombRange, strategy, player.Id);
             ActiveBombs.Add(bomb);
             if (!Entities.ContainsKey((bomb.X, bomb.Y)))
                 Entities[(bomb.X, bomb.Y)] = new List<Entity>();
@@ -219,10 +319,10 @@ namespace BombBoy.Models
                         player.HasShield = false;
                     }
                 }
-                if (GameMap.GetTile(player.X, player.Y) is WaterTile)
+                if (GameMap.GetTile(player.X, player.Y) is WaterTile waterTile)
                 {
-                    if (((WaterTile)GameMap.GetTile(player.X, player.Y)).CanDrown())
-                        player.TakeDamage();
+                    if (waterTile.CanDrown())
+                        ApplyDamage(player, null);
                 }
             }            
             //update bombs
@@ -340,8 +440,8 @@ namespace BombBoy.Models
                 int targetY = player.Y;
                 switch (player.Direction)
                 {
-                    case "Up": targetY += 1; break;
-                    case "Down": targetY -= 1; break;
+                    case "Up": targetY -= 1; break;
+                    case "Down": targetY += 1; break;
                     case "Right": targetX += 1; break;
                     case "Left": targetX -= 1; break;
                 }
@@ -349,7 +449,7 @@ namespace BombBoy.Models
                 var targetPlayer = Players.Values.FirstOrDefault(p => p.X == targetX && p.Y == targetY && p.IsAlive);
                 if (targetPlayer != null)
                 {
-                    targetPlayer.TakeDamage();
+                    ApplyDamage(targetPlayer, player);
                 }
                 else
                 {
@@ -367,8 +467,8 @@ namespace BombBoy.Models
                 int dx = 0, dy = 0;
                 switch (player.Direction)
                 {
-                    case "Up": dy = 1; break;
-                    case "Down": dy = -1; break;
+                    case "Up": dy = -1; break;
+                    case "Down": dy = 1; break;
                     case "Right": dx = 1; break;
                     case "Left": dx = -1; break;
                 }
@@ -378,6 +478,7 @@ namespace BombBoy.Models
                 int range = 0;
                 int maxRange = (weapon is FrozenLaserGun) ? 3 : 6; // Frozen has half range
 
+                GameMap.CurrentBlastOwnerId = player.Id;
                 while (GameMap.IsValidCoord(cx, cy) && range < maxRange)
                 {
                     var tile = GameMap.GetTile(cx, cy);
@@ -390,6 +491,7 @@ namespace BombBoy.Models
                     cy += dy;
                     range++;
                 }
+                GameMap.CurrentBlastOwnerId = null;
             }
             else if (weapon is ThrowableWeapon || weapon is SnowballWeapon)
             {
@@ -397,8 +499,8 @@ namespace BombBoy.Models
                 int dx = 0, dy = 0;
                 switch (player.Direction)
                 {
-                    case "Up": dy = 1; break;
-                    case "Down": dy = -1; break;
+                    case "Up": dy = -1; break;
+                    case "Down": dy = 1; break;
                     case "Right": dx = 1; break;
                     case "Left": dx = -1; break;
                 }

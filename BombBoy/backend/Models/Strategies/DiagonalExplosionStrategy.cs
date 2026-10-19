@@ -4,7 +4,7 @@ namespace BombBoy.Models.Strategies;
 
 /// <summary>
 /// Diagonal (X-shape) explosion strategy.
-/// Projects blasts diagonally, reaching behind straight barriers.
+/// Projects blasts diagonally, reaching around corners.
 /// </summary>
 public class DiagonalExplosionStrategy : IExplosionStrategy
 {
@@ -33,6 +33,8 @@ public class DiagonalExplosionStrategy : IExplosionStrategy
                     break;
 
                 var tile = map.GetTile(targetX, targetY);
+                if (tile == null)
+                    break;
 
                 // Stop at indestructible blocks
                 if (tile.Type == "IndestructableTile")

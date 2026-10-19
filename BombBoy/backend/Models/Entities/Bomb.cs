@@ -40,7 +40,9 @@ public class Bomb : Entity
 
     public void Detonate(Map map)
     {
+        map.CurrentBlastOwnerId = OwnerId;
         // Delegate explosion to the strategy
         Strategy.Explode(map, X, Y, Range);
+        map.CurrentBlastOwnerId = null;
     }
 }
