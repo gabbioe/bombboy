@@ -1,64 +1,89 @@
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
-using BombBoy.Models;
 using BombBoy.Services;
+using System.Threading.Tasks;
 
-// Inheriting from "Hub" gives this class superpowers:
-// 1. Clients (browsers) can call public methods on this class directly via JavaScript.
-// 2. This class can push messages/data back to connected clients in real time.
 public class AppHub : Hub
 {
     private readonly GameManager _gameManager;
 
     public AppHub(GameManager gameManager)
     {
-
-
-
         _gameManager = gameManager;
-
-        //aparently sitas runnina ne viena karta :D
-        //_gameManager.GenerateMap();
     }
+
     public override async Task OnConnectedAsync()
     {
-        //Console.WriteLine(_gameManager._Factory.GetFactoryProductColours());
-        var newPlayer = _gameManager.AddPlayer(Context.ConnectionId);
+        var result = _gameManager.AddPlayer(Context.ConnectionId);
+        if (result.isFull)
+        {
+            await Clients.Caller.SendAsync("LobbyFull", "The lobby is currently full (maximum 4 players allowed). Please try again later.");
+            return;
+        }
 
         await Clients.Caller.SendAsync("ReceiveMap", _gameManager.GetFullMap());
-        //await Clients.Caller.SendAsync("ReceiveTileColours", _gameManager._Factory.GetFactoryProductColours());
         await Clients.Caller.SendAsync("ReceivePlayerId", Context.ConnectionId);
         await Clients.All.SendAsync("UpdatePlayers", _gameManager.GetAllPlayers());
+        await Clients.All.SendAsync("Gametick", _gameManager.GetFullMap());
         await base.OnConnectedAsync();
     }
 
-    // Any public method you write here can be called directly from JavaScript in the browser!
-    // Example in client JS: connection.invoke("SendUserAction", "jump", 42);
+    public override async Task OnDisconnectedAsync(Exception? exception)
+    {
+        if (_gameManager.RemovePlayer(Context.ConnectionId, out _))
+        {
+            await Clients.All.SendAsync("UpdatePlayers", _gameManager.GetAllPlayers());
+            await Clients.All.SendAsync("Gametick", _gameManager.GetFullMap());
+        }
 
-    public override async Task OnDisconnectedAsync(Exception? exception)                                         
-    {                                                                                                            
-        // Remove player when they disconnect                                                                    
-        if (_gameManager.RemovePlayer(Context.ConnectionId, out _))                                              
-        {                                                                                                        
-            await Clients.All.SendAsync("UpdatePlayers", _gameManager.GetAllPlayers());                          
-        }                                                                                                        
-                                                                                                                     
-        await base.OnDisconnectedAsync(exception);                                                               
+        await base.OnDisconnectedAsync(exception);
+    }
+
+    public async Task ToggleReady()
+    {
+        _gameManager.ToggleReady(Context.ConnectionId);
+        await Clients.All.SendAsync("Gametick", _gameManager.GetFullMap());
+    }
+
+    public async Task VoteMap(string mapType)
+    {
+        _gameManager.VoteMap(Context.ConnectionId, mapType);
+        await Clients.All.SendAsync("Gametick", _gameManager.GetFullMap());
+    }
+
+    public async Task SetMatchRounds(int rounds)
+    {
+        _gameManager.SetMatchRounds(Context.ConnectionId, rounds);
+        await Clients.All.SendAsync("Gametick", _gameManager.GetFullMap());
+    }
+
+    public async Task SetMatchDuration(int durationSeconds)
+    {
+        _gameManager.SetMatchDuration(Context.ConnectionId, durationSeconds);
+        await Clients.All.SendAsync("Gametick", _gameManager.GetFullMap());
+    }
+
+    public async Task ForceStartGame()
+    {
+        _gameManager.ForceStartGame(Context.ConnectionId);
+        await Clients.All.SendAsync("Gametick", _gameManager.GetFullMap());
+    }
+
+    public async Task ReturnToLobby()
+    {
+        _gameManager.ReturnToLobby();
+        await Clients.All.SendAsync("Gametick", _gameManager.GetFullMap());
     }
 
     public async Task UseWeapon()
     {
         _gameManager.UseWeapon(Context.ConnectionId);
-        // send update to all clients
         await Clients.All.SendAsync("Gametick", _gameManager.GetFullMap());
-        //await Clients.All.SendAsync("UpdateItems", _gameManager.GetAllItems()); //testuojam ar jsone užteks info
     }
 
     public async Task Move(int dx, int dy)
     {
         _gameManager.MovePlayer(Context.ConnectionId, dx, dy);
         await Clients.All.SendAsync("Gametick", _gameManager.GetFullMap());
-        await Clients.All.SendAsync("UpdateItems", _gameManager.GetAllItems()); // send items as well
     }
 
     public string GetMap()
@@ -68,11 +93,7 @@ public class AppHub : Hub
 
     public void PlaceBomb(string? strategyName = null)
     {
-        if (!string.IsNullOrEmpty(strategyName))
-        {
-            _gameManager.SetPlayerStrategy(Context.ConnectionId, strategyName);
-        }
-        _gameManager.PlaceBomb(Context.ConnectionId);
+        _gameManager.PlaceBomb(Context.ConnectionId, strategyName);
     }
 
     public void SetStrategy(string strategyName)

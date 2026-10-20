@@ -34,6 +34,8 @@ public class PiercingLineExplosionStrategy : IExplosionStrategy
                     break;
 
                 var tile = map.GetTile(targetX, targetY);
+                if (tile == null)
+                    break;
 
                 // Indestructible blocks still stop the piercing ray
                 if (tile.Type == "IndestructableTile")

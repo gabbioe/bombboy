@@ -29,6 +29,8 @@ public class ClassicCrossExplosionStrategy : IExplosionStrategy
                     break;
 
                 var tile = map.GetTile(targetX, targetY);
+                if (tile == null)
+                    break;
 
                 // Indestructible blocks stop the ray
                 if (tile.Type == "IndestructableTile")

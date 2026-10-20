@@ -17,7 +17,9 @@ public class Map
 
     private BasicTile[,] MapTileGrid;
 
+    public string? CurrentBlastOwnerId { get; set; }
     public event Action<int, int, int>? OnBlastSpawned;
+    public event Action<int, int, int, string?>? OnBlastSpawnedWithOwner;
     public event Action<int, int>? OnBlockDestroyed;
 
     public MapTileFactory Factory;
@@ -120,6 +122,7 @@ public class Map
     {
         // 1. Boundary check
         if (!IsValidCoord(x, y)) return;
+        if (MapTileGrid[x, y] == null) return;
         // 2. Do not spawn blast on indestructible borders or pillars
         if (MapTileGrid[x, y].Type == "IndestructableTile") return;
         // 3. If it's a destructible block, damage it and turn it into floor
@@ -131,6 +134,7 @@ public class Map
         }
         // 4. Notify Match to add the Blast entity above this tile
         OnBlastSpawned?.Invoke(x, y, durationTicks);
+        OnBlastSpawnedWithOwner?.Invoke(x, y, durationTicks, CurrentBlastOwnerId);
     }
 
 

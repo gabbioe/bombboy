@@ -5,12 +5,14 @@ public class Blast : Entity
     public float Duration { get; set; } = 0.5f; 
     public int X { get; set; }
     public int Y { get; set; }
+    public string? OwnerId { get; set; }
 
-    public Blast(int x, int y, float duration = 0.5f) : base(layer: 0, type: "💥")
+    public Blast(int x, int y, float duration = 0.5f, string? ownerId = null) : base(layer: 0, type: "💥")
     {
         X = x;
         Y = y;
         Duration = duration;
+        OwnerId = ownerId;
     }
 
     public override bool CanWalk() => true;
