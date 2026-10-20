@@ -9,7 +9,7 @@ using System.Text.Json;
 
 namespace BombBoy.Models;
 
-public class Map
+public class Map : IPrototype<Map>
 {
     private int Size_X {  get; set; }
 
@@ -156,6 +156,7 @@ public class Map
         return result;
     }
 
+
     public string ReturnMapToJSon()
     {
         // Create a jagged array matching your grid dimensions
@@ -180,5 +181,27 @@ public class Map
     public int GetY()
     {
         return Size_X;
+    }
+
+    public Map ShallowCopy()
+    {
+        return (Map)this.MemberwiseClone();
+    }
+    public Map DeepCopy()
+    {
+        Map clone = (Map)this.MemberwiseClone();
+        clone.MapTileGrid = new BasicTile[Size_X, Size_Y];
+
+        for(int i = 0; i < Size_X; i++)
+        {
+            for(int j = 0; j < Size_Y; j++)
+            {
+                clone.MapTileGrid[i, j] = this.MapTileGrid[i, j].Clone();
+            }
+        }
+        clone.OnBlastSpawned = null;
+        clone.OnBlastSpawnedWithOwner = null;
+        clone.OnBlockDestroyed = null;
+        return clone;
     }
 }

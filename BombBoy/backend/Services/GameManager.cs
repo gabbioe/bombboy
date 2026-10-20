@@ -32,6 +32,7 @@ public class GameManager
     private readonly ConcurrentDictionary<string, Player> _players = new();
     private readonly ConcurrentDictionary<string, LobbyPlayer> _lobbyPlayers = new();
     private readonly object _lock = new();
+    private readonly HashSet<string> _sameVotes = new();
 
     private readonly Match _Match = new Match();
     private readonly LeaderboardObserver _leaderboard = new();
@@ -280,6 +281,8 @@ public class GameManager
             root["SelectedMapType"] = SelectedMapType;
             root["RoundWinner"] = RoundWinnerName;
             root["Champion"] = ChampionName;
+            root["SameMapVotes"] = _sameVotes.Count;
+            root["SameMapVotesNeeded"] = Math.Max(1, (int)Math.Ceiling(_lobbyPlayers.Count / 2.0));
 
             // Leaderboard
             var standings = _leaderboard.GetStandings();
@@ -359,7 +362,8 @@ public class GameManager
                 if (alive.Count <= 1 || RemainingSeconds <= 0)
                 {
                     _stage = GameStage.RoundEnd;
-                    IntermissionCountdown = 4.0f;
+                    IntermissionCountdown = 8.0f;
+                    _sameVotes.Clear();
 
                     Player? winner = alive.Count == 1 ? alive[0] : null;
                     RoundWinnerName = winner != null ? winner.Name : "Draw (No Survivors)";
@@ -374,9 +378,12 @@ public class GameManager
                 {
                     if (CurrentRound < TotalRounds)
                     {
+                        int needed = Math.Max(1, (int)Math.Ceiling(_lobbyPlayers.Count / 2.0));
+                        bool useSameMap = _sameVotes.Count >= needed;
+                        _sameVotes.Clear();
                         CurrentRound++;
                         RemainingSeconds = RoundDurationSeconds;
-                        _Match.ResetForNewRound(SelectedMapType);
+                        _Match.ResetForNewRound(SelectedMapType, useSameMap);
                         _stage = GameStage.InGame;
                     }
                     else
@@ -465,4 +472,18 @@ public class GameManager
             }
         }
     }
+
+    public void VoteSameMap(string connectionId)
+    {
+        lock (_lock)
+        {
+            if(_stage != GameStage.RoundEnd) return;
+
+            if (!_sameVotes.Remove(connectionId))
+            {
+                _sameVotes.Add(connectionId);
+            }
+        }
+    }
+
 }

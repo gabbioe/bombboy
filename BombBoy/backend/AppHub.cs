@@ -50,6 +50,12 @@ public class AppHub : Hub
         await Clients.All.SendAsync("Gametick", _gameManager.GetFullMap());
     }
 
+    public async Task VoteSameMap()
+    {
+        _gameManager.VoteSameMap(Context.ConnectionId);
+        await Clients.All.SendAsync("Gametick", _gameManager.GetFullMap());
+    }
+
     public async Task SetMatchRounds(int rounds)
     {
         _gameManager.SetMatchRounds(Context.ConnectionId, rounds);

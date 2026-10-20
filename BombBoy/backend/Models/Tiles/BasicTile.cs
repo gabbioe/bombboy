@@ -44,5 +44,10 @@ namespace BombBoy.Models.Tiles
         {
             return _jsonFormating;
         }
+
+        public virtual BasicTile Clone()
+        {
+            return (BasicTile)this.MemberwiseClone();
+        }
     }
 }

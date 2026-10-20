@@ -857,6 +857,9 @@
                     <tbody id="round-end-tbody"></tbody>
                 </table>
             </div>
+            <button id="btn-vote-same-map" class="btn-action" style="margin-top: 12px;" onclick="voteSameMap()">
+                Replay Same Map (0/1)
+            </button>
         </div>
     </div>
 
@@ -1061,6 +1064,13 @@
                     roundWinnerText.textContent = parsed.RoundWinner ? `Winner: ${parsed.RoundWinner}` : "Draw!";
                     intermissionTimer.textContent = parsed.IntermissionCountdown !== undefined ? parsed.IntermissionCountdown : 3;
                     renderSummaryTable(roundEndTbody, parsed.Leaderboard);
+
+                    const sameMapBtn = document.getElementById("btn-vote-same-map");
+                    if (sameMapBtn) {
+                        const votes = parsed.SameMapVotes || 0;
+                        const needed = parsed.SameMapVotesNeeded || 1;
+                        sameMapBtn.textContent = `Replay Same Map (${votes}/${needed})`;
+                    }
                 } else if (stage === "MatchEnd") {
                     viewLobby.classList.remove("active");
                     viewGame.classList.add("active");
@@ -1224,6 +1234,12 @@
             }
             if (connection && connection.state === signalR.HubConnectionState.Connected) {
                 connection.invoke("VoteMap", type).catch(err => console.error("VoteMap error:", err));
+            }
+        }
+
+        function voteSameMap() {
+            if (connection && connection.state === signalR.HubConnectionState.Connected) {
+                connection.invoke("VoteSameMap").catch(err => console.error("VoteSameMap error:", err));
             }
         }
 

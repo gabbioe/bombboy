@@ -20,6 +20,7 @@ namespace BombBoy.Models
         private readonly List<IGameEventObserver> _observers = new();
 
         private int PlayerCount = 0;
+        private Map? _mapPrototype;
         private Map GameMap;
         private Dictionary<(int x, int y), List<Entity>> Entities = new();
 
@@ -103,38 +104,9 @@ namespace BombBoy.Models
 
             GameMap = builder.GetResult();
             Console.WriteLine(GameMap.ReturnMapToJSon());
+            _mapPrototype = GameMap.DeepCopy();
             // subscribe to Block Destroyed event to spawn items
-            GameMap.OnBlockDestroyed += OnBlockDestroyed;
-            GameMap.OnBlastSpawnedWithOwner += (bx, by, durationTicks, ownerId) =>
-            {
-                var blast = new Blast(bx, by, 0.5f, ownerId);
-                if (!Entities.ContainsKey((bx, by)))
-                    Entities[(bx, by)] = new List<Entity>();
-                Entities[(bx, by)].Add(blast);
-                ActiveBlasts.Add(blast);
-
-                // destroy items in blast
-                DestroyItemsInBlast(bx, by);
-
-                foreach (var p in Players.Values)
-                {
-                    if (p.IsAlive && p.X == bx && p.Y == by)
-                    {
-                        Player? killer = null;
-                        if (!string.IsNullOrEmpty(blast.OwnerId))
-                        {
-                            Players.TryGetValue(blast.OwnerId, out killer);
-                        }
-                        ApplyDamage(p, killer);
-                    }
-                }
-
-                var hitBomb = ActiveBombs.FirstOrDefault(b => b.X == bx && b.Y == by);
-                if (hitBomb != null)
-                {
-                    hitBomb.DoDamage();
-                }
-            };
+            SubscribeMapevents(GameMap);
 
             StartingPositions[0] = new[] { 1, 1 };
             StartingPositions[1] = new[] { 1, GameMap.GetX() -2 };
@@ -196,7 +168,7 @@ namespace BombBoy.Models
             throw new ArgumentException($"Player with id {PlayerId} doesn't exist");            
         }
 
-        public void ResetForNewRound(string mapType = "normal")
+        public void ResetForNewRound(string mapType = "normal", bool useSameMap = false)
         {
             ActiveBombs.Clear();
             ActiveBlasts.Clear();
@@ -213,7 +185,15 @@ namespace BombBoy.Models
                 _itemFactory = new BasicItemFactory();
             }
 
-            GenerateMap(mapType);
+            if (useSameMap && _mapPrototype != null)
+            {
+                GameMap = _mapPrototype.DeepCopy();
+                SubscribeMapevents(GameMap);
+            }
+            else
+            {
+                GenerateMap(mapType);
+            }
 
             AvailableStartingPositions = new List<int> { 0, 1, 2, 3 };
             foreach (var p in Players.Values)
@@ -599,6 +579,41 @@ namespace BombBoy.Models
                 EntityJsonArray.Add(entry);
             }
             return JsonSerializer.Serialize(EntityJsonArray);
+        }
+
+        private void SubscribeMapevents(Map map)
+        {
+            map.OnBlockDestroyed += OnBlockDestroyed;
+            map.OnBlastSpawnedWithOwner += (bx, by, durationTicks, ownerId) =>
+            {
+                var blast = new Blast(bx, by, 0.5f, ownerId);
+                if (!Entities.ContainsKey((bx, by)))
+                    Entities[(bx, by)] = new List<Entity>();
+                Entities[(bx, by)].Add(blast);
+                ActiveBlasts.Add(blast);
+
+                // destroy items in blast
+                DestroyItemsInBlast(bx, by);
+
+                foreach (var p in Players.Values)
+                {
+                    if (p.IsAlive && p.X == bx && p.Y == by)
+                    {
+                        Player? killer = null;
+                        if (!string.IsNullOrEmpty(blast.OwnerId))
+                        {
+                            Players.TryGetValue(blast.OwnerId, out killer);
+                        }
+                        ApplyDamage(p, killer);
+                    }
+                }
+
+                var hitBomb = ActiveBombs.FirstOrDefault(b => b.X == bx && b.Y == by);
+                if (hitBomb != null)
+                {
+                    hitBomb.DoDamage();
+                }
+            };
         }
 
     }
