@@ -9,7 +9,7 @@ namespace Bombboy.Models.MapBuilders
 {
     public interface IMapBuilder
     {
-        public IMapBuilder SetDimensions(int x, int y);
+        public abstract IMapBuilder SetDimensions(int x, int y);
         public abstract IMapBuilder BuildBlockSpawnChance(int chance);
         public abstract IMapBuilder BuildWaterSpawnChance(int chance);
         public abstract IMapBuilder BuildHavePillars(bool havePillars);
