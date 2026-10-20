@@ -13,8 +13,11 @@ namespace Bombboy.Models.MapBuilders
 
         private int _blockSpawnChance = 20;
 
-        private int _WaterSpawnChance = 50;
-        private MapTileFactory _factory;
+        private int _WaterSpawnChance = 30;
+
+        private bool _havePillars = false;
+
+        private MapTileFactory _factory = new MapTileFactory();
         public IMapBuilder SetDimensions(int x, int y)
         {
             _sizeX = x;
@@ -39,9 +42,15 @@ namespace Bombboy.Models.MapBuilders
             return this;
         }
 
-        Map IMapBuilder.GetResult()
+        public IMapBuilder BuildHavePillars(bool havePillars)
         {
-            return new Map(_sizeX, _sizeY, _blockSpawnChance, _WaterSpawnChance, _factory);
+            _havePillars = havePillars;
+            return this;
+        }
+
+        public Map GetResult()
+        {
+            return new Map(_sizeX, _sizeY, _blockSpawnChance, _WaterSpawnChance, _factory, _havePillars);
         }
     }
 }

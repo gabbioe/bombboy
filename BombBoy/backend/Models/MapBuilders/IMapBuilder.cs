@@ -12,6 +12,7 @@ namespace Bombboy.Models.MapBuilders
         public IMapBuilder SetDimensions(int x, int y);
         public abstract IMapBuilder BuildBlockSpawnChance(int chance);
         public abstract IMapBuilder BuildWaterSpawnChance(int chance);
+        public abstract IMapBuilder BuildHavePillars(bool havePillars);
         public abstract IMapBuilder BuildFactory(MapTileFactory factory);
 
         public abstract Map GetResult();

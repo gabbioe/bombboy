@@ -40,7 +40,7 @@ public class GameManager
     {
         lock (_lock)
         {
-            _Match.GenerateMap(x,x, BreakableBlockSpawnChance, waterTileSpawnChance);
+            _Match.GenerateMap();
             _Match.GetMapStringFormat();
         }
         

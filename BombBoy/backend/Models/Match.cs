@@ -1,3 +1,4 @@
+using Bombboy.Models.MapBuilders;
 using Bombboy.Models.Tiles;
 using BombBoy.Models.GridEntities;
 using BombBoy.Models.ItemFactories;
@@ -49,10 +50,17 @@ namespace BombBoy.Models
         {
             return GameMap.ReturnMapToConsole();
         }
-        public void GenerateMap(int x, int y, int BlockSpawnChance, int WaterSpawnChance){
+        public void GenerateMap(){
 
-            GameMap = new Map(x, y, BlockSpawnChance, WaterSpawnChance, new MapTileFactory());
-            Console.WriteLine(GameMap.ReturnMapToJSon);
+            //StandartSmallMapBuilder builder = new StandartSmallMapBuilder();
+            WateryBigMapBuilder builder = new WateryBigMapBuilder();
+
+            //builder.SetDimensions(7, 7).BuildBlockSpawnChance(50).BuildWaterSpawnChance(10).BuildFactory(new MapTileFactory()).BuildHavePillars(false);
+
+
+
+            GameMap = builder.GetResult();
+
             // subscribe to Block Destroyed event to spawn items
             GameMap.OnBlockDestroyed += OnBlockDestroyed;
             GameMap.OnBlastSpawned += (bx, by, durationTicks) =>
@@ -88,9 +96,9 @@ namespace BombBoy.Models
             StartingPositions[3] = [x, y];
             */
             StartingPositions[0] = new[] { 1, 1 };
-            StartingPositions[1] = new[] { 1, y };
-            StartingPositions[2] = new[] { x, 1 };
-            StartingPositions[3] = new[] { x, y };
+            StartingPositions[1] = new[] { 1, GameMap.GetX() -2 };
+            StartingPositions[2] = new[] { GameMap.GetX() - 2, 1 };
+            StartingPositions[3] = new[] { GameMap.GetX() - 2, GameMap.GetY() - 2 };
             
         }
 
