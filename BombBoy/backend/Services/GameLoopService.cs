@@ -19,7 +19,7 @@ public class GameLoopService : BackgroundService
         const float deltaTime = 0.05f;
 
         //Asuminu cia vyksta viena karta tik kai paleidi game, jei ne tai negerai :/
-        _gameManager.GenerateMap(7, 7, 50, 10);
+        _gameManager.GenerateMap();
         while (!stoppingToken.IsCancellationRequested)
         {
 

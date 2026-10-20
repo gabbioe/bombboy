@@ -95,11 +95,11 @@ public class GameManager
         }
     }
 
-    public void GenerateMap(int x, int y, int BreakableBlockSpawnChance, int waterTileSpawnChance)
+    public void GenerateMap()
     {
         lock (_lock)
         {
-            _Match.GenerateMap(x, y, BreakableBlockSpawnChance, waterTileSpawnChance, SelectedMapType);
+            _Match.GenerateMap();
             _Match.GetMapStringFormat();
         }
     }

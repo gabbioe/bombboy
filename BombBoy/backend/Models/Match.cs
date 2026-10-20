@@ -93,9 +93,15 @@ namespace BombBoy.Models
             return GameMap.ReturnMapToConsole();
         }
 
-        public void GenerateMap(int x, int y, int BlockSpawnChance, int WaterSpawnChance, string mapType = "normal")
+        public void GenerateMap(string mapType = "normal")
         {
-            GameMap = new Map(x, y, BlockSpawnChance, WaterSpawnChance, new MapTileFactory());
+            IMapBuilder builder = new StandartSmallMapBuilder();
+            if (mapType == "ice")
+                builder = new WateryBigMapBuilder();
+
+            //builder.SetDimensions(7, 7).BuildBlockSpawnChance(20).BuildWaterSpawnChance(20).BuildHavePillars(false);
+
+            GameMap = builder.GetResult();
             Console.WriteLine(GameMap.ReturnMapToJSon());
             // subscribe to Block Destroyed event to spawn items
             GameMap.OnBlockDestroyed += OnBlockDestroyed;
@@ -207,7 +213,7 @@ namespace BombBoy.Models
                 _itemFactory = new BasicItemFactory();
             }
 
-            GenerateMap(7, 7, 50, 10, mapType);
+            GenerateMap(mapType);
 
             AvailableStartingPositions = new List<int> { 0, 1, 2, 3 };
             foreach (var p in Players.Values)
