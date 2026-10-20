@@ -30,6 +30,12 @@ public class Player
     public int ShieldDuration { get; set; } = 0;
 
 
+    
+
+
+
+
+
     //reikalingas tarp match, galvoju sita padaryti matcho player klase, game manager atskira turetu turet
     public int StartingLocation { get;set;}
 

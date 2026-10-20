@@ -1,3 +1,4 @@
+using Bombboy.Models.MapBuilders;
 using Bombboy.Models.Tiles;
 using BombBoy.Models.GridEntities;
 using BombBoy.Models.ItemFactories;
@@ -130,9 +131,10 @@ namespace BombBoy.Models
             };
 
             StartingPositions[0] = new[] { 1, 1 };
-            StartingPositions[1] = new[] { 1, y };
-            StartingPositions[2] = new[] { x, 1 };
-            StartingPositions[3] = new[] { x, y };
+            StartingPositions[1] = new[] { 1, GameMap.GetX() -2 };
+            StartingPositions[2] = new[] { GameMap.GetX() - 2, 1 };
+            StartingPositions[3] = new[] { GameMap.GetX() - 2, GameMap.GetY() - 2 };
+            
         }
 
         /// <summary>

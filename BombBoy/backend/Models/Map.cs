@@ -32,18 +32,22 @@ public class Map
     /// <param name="size_Y"></param>
     /// <param name="BlockSpawnChance"> kokios tikimybes kad bus sunaikinamas blokas is 10 (pvz 1 is 10 tai 10% kad laisva vieta bus blokas)</param>
     /// <exception cref="ArgumentException"></exception>
-    public Map(int size_X, int size_Y, int BlockSpawnChance, int WaterSpawnChance, MapTileFactory factory)
+    public Map(int size_X, int size_Y, int BlockSpawnChance, int WaterSpawnChance, MapTileFactory factory, bool HavePillars)
     {
         Factory = factory;
-        if (size_X < 5 || size_Y < 5)
+        if (HavePillars)
         {
-            throw new ArgumentException($"Both Size X ({size_X}) and Size Y ({size_Y}) must be at least 5.");
-        }
+            if (size_X < 5 || size_Y < 5)
+            {
+                throw new ArgumentException($"Both Size X ({size_X}) and Size Y ({size_Y}) must be at least 5.");
+            }
 
-        if (size_X % 2 == 0 || size_Y % 2 == 0)
-        {
-            throw new ArgumentException($"Both Size X ({size_X}) and Size Y ({size_Y}) must NOT be even.");
+            if (size_X % 2 == 0 || size_Y % 2 == 0)
+            {
+                throw new ArgumentException($"Both Size X ({size_X}) and Size Y ({size_Y}) must NOT be even.");
+            }
         }
+        
 
         //del borderiu +2 
         Size_X = size_X +2;
@@ -51,11 +55,11 @@ public class Map
         
         //stackas jei apdorosim rejoininima, jei ne galime tsg masyva turet
         
-        generateMapGood(BlockSpawnChance, WaterSpawnChance);
+        generateMapGood(BlockSpawnChance, WaterSpawnChance, HavePillars);
         //GenerateMapSimple();
     }
 
-    private void generateMapGood(int BlockSpawnChance, int WaterSpawnChance)
+    private void generateMapGood(int BlockSpawnChance, int WaterSpawnChance, bool HavePillars)
     {
         //Console.WriteLine("Generuoju mapa!");
 
@@ -69,7 +73,7 @@ public class Map
                 if (i == 0 || i == Size_X - 1 || j == 0 || j == Size_Y - 1)
                     MapTileGrid[i, j] = Factory.CreateIndestructableTile();
                 //kas antra bloka pazymi kad butu 
-                if (i % 2 == 0 && j % 2 == 0)
+                if (HavePillars && i % 2 == 0 && j % 2 == 0)
                     MapTileGrid[i, j] = Factory.CreateIndestructableTile();
                 //Tikrina ar nera kampuose kur playeriai spawninasi 
                 if (MapTileGrid[i, j] == null)
