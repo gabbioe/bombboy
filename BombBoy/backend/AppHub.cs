@@ -106,4 +106,9 @@ public class AppHub : Hub
     {
         _gameManager.SetPlayerStrategy(Context.ConnectionId, strategyName);
     }
+
+    public void SetSoundVolume(float volume)
+    {
+        _gameManager.SetSoundVolume(volume);
+    }
 }

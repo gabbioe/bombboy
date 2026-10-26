@@ -40,6 +40,8 @@ namespace BombBoy.Models
             _itemFactory = itemFactory ?? new BasicItemFactory();
         }
 
+        public string CurrentMapType { get; private set; } = "normal";
+
         #region Observer Pattern Implementation
         public void Attach(IGameEventObserver observer)
         {
@@ -75,6 +77,102 @@ namespace BombBoy.Models
                 obs.OnMatchEnded(champion, finalStandings);
             }
         }
+
+        public void NotifyBombPlanted(Player player)
+        {
+            foreach (var obs in _observers.ToList())
+            {
+                obs.OnBombPlanted(player);
+            }
+        }
+
+        public void NotifyBombExploded(int x, int y)
+        {
+            foreach (var obs in _observers.ToList())
+            {
+                obs.OnBombExploded(x, y);
+            }
+        }
+
+        public void NotifyPlayerDamaged(Player victim, Player? attacker = null)
+        {
+            foreach (var obs in _observers.ToList())
+            {
+                obs.OnPlayerDamaged(victim, attacker);
+            }
+        }
+
+        public void NotifyPlayerDrowned(Player victim)
+        {
+            foreach (var obs in _observers.ToList())
+            {
+                obs.OnPlayerDrowned(victim);
+            }
+        }
+
+        public void NotifyItemSpawned(int x, int y)
+        {
+            foreach (var obs in _observers.ToList())
+            {
+                obs.OnItemSpawned(x, y);
+            }
+        }
+
+        public void NotifyItemPickedUp(Player player, string itemType)
+        {
+            foreach (var obs in _observers.ToList())
+            {
+                obs.OnItemPickedUp(player, itemType);
+            }
+        }
+
+        public void NotifyTileDestroyed(int x, int y)
+        {
+            foreach (var obs in _observers.ToList())
+            {
+                obs.OnTileDestroyed(x, y);
+            }
+        }
+
+        public void NotifyWeaponUsed(Player player, string weaponName)
+        {
+            foreach (var obs in _observers.ToList())
+            {
+                obs.OnWeaponUsed(player, weaponName);
+            }
+        }
+
+        public void NotifyRoundStarted(int roundNumber, string mapType)
+        {
+            foreach (var obs in _observers.ToList())
+            {
+                obs.OnRoundStarted(roundNumber, mapType);
+            }
+        }
+
+        public void NotifyPlayerMoved(Player player, string mapType)
+        {
+            foreach (var obs in _observers.ToList())
+            {
+                obs.OnPlayerMoved(player, mapType);
+            }
+        }
+
+        public void NotifyPlayerJoined(string playerName)
+        {
+            foreach (var obs in _observers.ToList())
+            {
+                obs.OnPlayerJoined(playerName);
+            }
+        }
+
+        public void NotifyPlayerLeft(string playerName)
+        {
+            foreach (var obs in _observers.ToList())
+            {
+                obs.OnPlayerLeft(playerName);
+            }
+        }
         #endregion
 
         public bool ApplyDamage(Player victim, Player? killer)
@@ -86,6 +184,10 @@ namespace BombBoy.Models
             {
                 NotifyPlayerDied(victim, killer);
             }
+            else
+            {
+                NotifyPlayerDamaged(victim, killer);
+            }
             return died;
         }
 
@@ -96,6 +198,7 @@ namespace BombBoy.Models
 
         public void GenerateMap(string mapType = "normal")
         {
+            CurrentMapType = mapType;
             IMapBuilder builder = new StandartSmallMapBuilder();
             if (mapType == "ice")
                 builder = new WateryBigMapBuilder();
@@ -137,6 +240,7 @@ namespace BombBoy.Models
                         //Players[PlayerId].Y = y+ dy;
                         player.X = x + dx;
                         player.Y = y + dy;
+                        NotifyPlayerMoved(player, CurrentMapType);
 
                         var blast = ActiveBlasts.FirstOrDefault(b => b.X == player.X && b.Y == player.Y);
                         if (blast != null)
@@ -170,6 +274,7 @@ namespace BombBoy.Models
 
         public void ResetForNewRound(string mapType = "normal", bool useSameMap = false)
         {
+            CurrentMapType = mapType;
             ActiveBombs.Clear();
             ActiveBlasts.Clear();
             _items.Clear();
@@ -276,12 +381,14 @@ namespace BombBoy.Models
             if (!Entities.ContainsKey((bomb.X, bomb.Y)))
                 Entities[(bomb.X, bomb.Y)] = new List<Entity>();
             Entities[(bomb.X, bomb.Y)].Add(bomb);
+            NotifyBombPlanted(player);
             return true;
         }
 
         // method to spawn items when a block is destroyed
         public void OnBlockDestroyed(int x, int y)
         {
+            NotifyTileDestroyed(x, y);
             // 20% chance to spawn an item
             if (_rand.Next(0, 100) < 20)
             {
@@ -307,10 +414,15 @@ namespace BombBoy.Models
                         player.HasShield = false;
                     }
                 }
-                if (GameMap.GetTile(player.X, player.Y) is WaterTile waterTile)
+                if (player.IsAlive && GameMap.GetTile(player.X, player.Y) is WaterTile waterTile)
                 {
                     if (waterTile.CanDrown())
-                        ApplyDamage(player, null);
+                    {
+                        NotifyPlayerDrowned(player);
+                        player.Lives = 0;
+                        player.IsAlive = false;
+                        NotifyPlayerDied(player, null);
+                    }
                 }
             }            
             //update bombs
@@ -320,6 +432,7 @@ namespace BombBoy.Models
                 if (bomb.Tick(deltaTime))
                 {
                     bomb.Detonate(GameMap);
+                    NotifyBombExploded(bomb.X, bomb.Y);
                     if (Entities.TryGetValue((bomb.X, bomb.Y), out var list))
                     {
                         list.Remove(bomb);
@@ -376,6 +489,7 @@ namespace BombBoy.Models
                 newItem = _itemFactory.CreateWeapon(x, y);
             }
             _items.Add(newItem);
+            NotifyItemSpawned(x, y);
         }
 
         // method to check for pickups
@@ -386,6 +500,7 @@ namespace BombBoy.Models
             {
                 item.Pickup(player);
                 _items.Remove(item);
+                NotifyItemPickedUp(player, item is Weapon ? "Weapon" : "Powerup");
             }
         }
 
@@ -419,6 +534,7 @@ namespace BombBoy.Models
             if (player.CurrentWeapon == null) return;
 
             var weapon = player.CurrentWeapon;
+            NotifyWeaponUsed(player, weapon.GetType().Name);
             weapon.Use(player); // decrements uses internally
 
             if (weapon is Knife || weapon is Popsicle)

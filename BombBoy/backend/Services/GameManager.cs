@@ -1,3 +1,4 @@
+using BombBoy.Models.Adapter;
 using BombBoy.Models;
 using BombBoy.Models.Observer;
 using BombBoy.Models.Strategies;
@@ -37,6 +38,11 @@ public class GameManager
     private readonly Match _Match = new Match();
     private readonly LeaderboardObserver _leaderboard = new();
     private readonly GameEventLoggerObserver _logger = new();
+    private readonly ExternalAudioEngine _audioEngine = new();
+    private readonly ISoundEffectService _soundService;
+    private readonly AudioObserver _audioObserver;
+
+    public event Action<string, float>? OnSoundEffectPlayed;
 
     private GameStage _stage = GameStage.Lobby;
 
@@ -51,9 +57,16 @@ public class GameManager
 
     public GameManager()
     {
+        _soundService = new SoundEffectAdapter(_audioEngine, (soundFile, vol) => OnSoundEffectPlayed?.Invoke(soundFile, vol));
+        _audioObserver = new AudioObserver(_soundService);
+
         _Match.Attach(_leaderboard);
         _Match.Attach(_logger);
+        _Match.Attach(_audioObserver);
     }
+
+    public void SetSoundVolume(float volume) => _soundService.SetVolume(volume);
+    public float GetSoundVolume() => _soundService.GetVolume();
 
     public (Player? player, bool isFull) AddPlayer(string connectionId)
     {
@@ -77,6 +90,7 @@ public class GameManager
             };
             _lobbyPlayers[connectionId] = lobbyPlayer;
             _leaderboard.RegisterPlayer(connectionId, name);
+            _soundService.PlaySound(SoundEffectType.LobbyJoin);
 
             var player = new Player
             {
@@ -112,6 +126,13 @@ public class GameManager
             _lobbyPlayers.TryRemove(connectionId, out var removedLobby);
             _Match.RemovePlayer(connectionId);
             bool removed = _players.TryRemove(connectionId, out player);
+
+            if (_stage == GameStage.Lobby)
+            {
+                _leaderboard.RemovePlayer(connectionId);
+            }
+
+            _soundService.PlaySound(SoundEffectType.PlayerLeave);
 
             if (removedLobby != null && removedLobby.IsHost && _lobbyPlayers.Count > 0)
             {
@@ -231,7 +252,7 @@ public class GameManager
         RoundWinnerName = string.Empty;
         ChampionName = string.Empty;
 
-        _leaderboard.ResetScores();
+        _leaderboard.Clear();
         foreach (var lp in _lobbyPlayers.Values)
         {
             _leaderboard.RegisterPlayer(lp.Id, lp.Name);
@@ -239,6 +260,7 @@ public class GameManager
 
         _Match.ResetForNewRound(SelectedMapType);
         _stage = GameStage.InGame;
+        _Match.NotifyRoundStarted(CurrentRound, SelectedMapType);
     }
 
     public void ReturnToLobby()
@@ -385,6 +407,7 @@ public class GameManager
                         RemainingSeconds = RoundDurationSeconds;
                         _Match.ResetForNewRound(SelectedMapType, useSameMap);
                         _stage = GameStage.InGame;
+                        _Match.NotifyRoundStarted(CurrentRound, SelectedMapType);
                     }
                     else
                     {

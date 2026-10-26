@@ -11,6 +11,11 @@ public class GameLoopService : BackgroundService
     {
         _gameManager = gameManager;
         _hubContext = hubContext;
+
+        _gameManager.OnSoundEffectPlayed += (soundFile, volume) =>
+        {
+            _ = _hubContext.Clients.All.SendAsync("PlaySoundEffect", soundFile, volume);
+        };
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
