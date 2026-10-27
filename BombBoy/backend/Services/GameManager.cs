@@ -6,7 +6,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 
 namespace BombBoy.Services;
@@ -19,22 +18,13 @@ public enum GameStage
     MatchEnd
 }
 
-public class LobbyPlayer
-{
-    public string Id { get; set; } = string.Empty;
-    public string Name { get; set; } = string.Empty;
-    public bool IsHost { get; set; } = false;
-    public bool IsReady { get; set; } = false;
-    public string MapVote { get; set; } = "normal"; // "normal" or "ice"
-}
-
 public class GameManager
 {
     private readonly ConcurrentDictionary<string, Player> _players = new();
-    private readonly ConcurrentDictionary<string, LobbyPlayer> _lobbyPlayers = new();
     private readonly object _lock = new();
     private readonly HashSet<string> _sameVotes = new();
 
+    private readonly LobbyService _lobby = new();
     private readonly Match _Match = new Match();
     private readonly LeaderboardObserver _leaderboard = new();
     private readonly GameEventLoggerObserver _logger = new();
@@ -72,23 +62,10 @@ public class GameManager
     {
         lock (_lock)
         {
-            if (_lobbyPlayers.Count >= 4)
-            {
-                return (null, true);
-            }
-
-            bool isHost = _lobbyPlayers.Count == 0;
             string name = $"Player-{connectionId[..Math.Min(4, connectionId.Length)]}";
+            if (!_lobby.TryAddPlayer(connectionId, name))
+                return (null, true);
 
-            var lobbyPlayer = new LobbyPlayer
-            {
-                Id = connectionId,
-                Name = name,
-                IsHost = isHost,
-                IsReady = false,
-                MapVote = "normal"
-            };
-            _lobbyPlayers[connectionId] = lobbyPlayer;
             _leaderboard.RegisterPlayer(connectionId, name);
             _soundService.PlaySound(SoundEffectType.LobbyJoin);
 
@@ -123,7 +100,7 @@ public class GameManager
     {
         lock (_lock)
         {
-            _lobbyPlayers.TryRemove(connectionId, out var removedLobby);
+            _lobby.RemovePlayer(connectionId);
             _Match.RemovePlayer(connectionId);
             bool removed = _players.TryRemove(connectionId, out player);
 
@@ -134,13 +111,7 @@ public class GameManager
 
             _soundService.PlaySound(SoundEffectType.PlayerLeave);
 
-            if (removedLobby != null && removedLobby.IsHost && _lobbyPlayers.Count > 0)
-            {
-                var newHost = _lobbyPlayers.Values.First();
-                newHost.IsHost = true;
-            }
-
-            if (_lobbyPlayers.Count == 0)
+            if (_lobby.PlayerCount == 0)
             {
                 _stage = GameStage.Lobby;
                 _leaderboard.Clear();
@@ -157,9 +128,8 @@ public class GameManager
         {
             if (_stage != GameStage.Lobby) return;
 
-            if (_lobbyPlayers.TryGetValue(connectionId, out var lp))
+            if (_lobby.TryToggleReady(connectionId))
             {
-                lp.IsReady = !lp.IsReady;
                 CheckAutoStart();
             }
         }
@@ -171,10 +141,7 @@ public class GameManager
         {
             if (_stage != GameStage.Lobby) return;
 
-            if (_lobbyPlayers.TryGetValue(connectionId, out var lp))
-            {
-                lp.MapVote = mapType.ToLower() == "ice" ? "ice" : "normal";
-            }
+            _lobby.TryVoteMap(connectionId, mapType);
         }
     }
 
@@ -183,7 +150,7 @@ public class GameManager
         lock (_lock)
         {
             if (_stage != GameStage.Lobby) return false;
-            if (!_lobbyPlayers.TryGetValue(connectionId, out var lp) || !lp.IsHost) return false;
+            if (!_lobby.IsHost(connectionId)) return false;
 
             TotalRounds = Math.Clamp(rounds, 1, 10);
             return true;
@@ -195,7 +162,7 @@ public class GameManager
         lock (_lock)
         {
             if (_stage != GameStage.Lobby) return false;
-            if (!_lobbyPlayers.TryGetValue(connectionId, out var lp) || !lp.IsHost) return false;
+            if (!_lobby.IsHost(connectionId)) return false;
 
             int[] allowed = { 30, 60, 120, 150, 180 };
             if (allowed.Contains(durationSeconds))
@@ -211,25 +178,17 @@ public class GameManager
     {
         lock (_lock)
         {
-            if (_stage != GameStage.Lobby) return false;
-            if (!_lobbyPlayers.TryGetValue(connectionId, out var lp) || !lp.IsHost) return false;
-            if (_lobbyPlayers.Count < 2) return false;
+            if (_stage != GameStage.Lobby || !_lobby.CanForceStart(connectionId))
+                return false;
 
-            int readyCount = _lobbyPlayers.Values.Count(p => p.IsReady);
-            int halfCount = (int)Math.Ceiling(_lobbyPlayers.Count / 2.0);
-
-            if (readyCount >= halfCount)
-            {
-                StartNewMatchSession();
-                return true;
-            }
-            return false;
+            StartNewMatchSession();
+            return true;
         }
     }
 
     private void CheckAutoStart()
     {
-        if (_lobbyPlayers.Count >= 2 && _lobbyPlayers.Values.All(p => p.IsReady))
+        if (_lobby.CanAutoStart)
         {
             StartNewMatchSession();
         }
@@ -237,15 +196,7 @@ public class GameManager
 
     private void StartNewMatchSession()
     {
-        int normalCount = _lobbyPlayers.Values.Count(p => p.MapVote == "normal");
-        int iceCount = _lobbyPlayers.Values.Count(p => p.MapVote == "ice");
-
-        if (normalCount > iceCount)
-            SelectedMapType = "normal";
-        else if (iceCount > normalCount)
-            SelectedMapType = "ice";
-        else
-            SelectedMapType = Random.Shared.Next(0, 2) == 0 ? "normal" : "ice";
+        SelectedMapType = _lobby.ChooseMapType();
 
         CurrentRound = 1;
         RemainingSeconds = RoundDurationSeconds;
@@ -253,7 +204,7 @@ public class GameManager
         ChampionName = string.Empty;
 
         _leaderboard.Clear();
-        foreach (var lp in _lobbyPlayers.Values)
+        foreach (var lp in _lobby.GetPlayers())
         {
             _leaderboard.RegisterPlayer(lp.Id, lp.Name);
         }
@@ -268,10 +219,7 @@ public class GameManager
         lock (_lock)
         {
             _stage = GameStage.Lobby;
-            foreach (var lp in _lobbyPlayers.Values)
-            {
-                lp.IsReady = false;
-            }
+            _lobby.ResetReadyStatus();
             CurrentRound = 1;
             RemainingSeconds = RoundDurationSeconds;
             RoundWinnerName = string.Empty;
@@ -304,14 +252,14 @@ public class GameManager
             root["RoundWinner"] = RoundWinnerName;
             root["Champion"] = ChampionName;
             root["SameMapVotes"] = _sameVotes.Count;
-            root["SameMapVotesNeeded"] = Math.Max(1, (int)Math.Ceiling(_lobbyPlayers.Count / 2.0));
+            root["SameMapVotesNeeded"] = Math.Max(1, (int)Math.Ceiling(_lobby.PlayerCount / 2.0));
 
             // Leaderboard
             var standings = _leaderboard.GetStandings();
             var lbArray = new JsonArray();
             foreach (var s in standings)
             {
-                bool isHost = _lobbyPlayers.TryGetValue(s.PlayerId, out var lp) && lp.IsHost;
+                bool isHost = _lobby.IsHost(s.PlayerId);
                 lbArray.Add(new JsonObject
                 {
                     ["PlayerId"] = s.PlayerId,
@@ -326,13 +274,11 @@ public class GameManager
             root["Leaderboard"] = lbArray;
 
             // Lobby info
-            int readyCount = _lobbyPlayers.Values.Count(p => p.IsReady);
-            int halfCount = (int)Math.Ceiling(_lobbyPlayers.Count / 2.0);
-            bool canForce = _lobbyPlayers.Count >= 2 && readyCount >= halfCount;
-            bool canAuto = _lobbyPlayers.Count >= 2 && readyCount == _lobbyPlayers.Count;
+            bool canForce = _lobby.CanForceStart();
+            bool canAuto = _lobby.CanAutoStart;
 
             var playersArray = new JsonArray();
-            foreach (var lp in _lobbyPlayers.Values)
+            foreach (var lp in _lobby.GetPlayers())
             {
                 playersArray.Add(new JsonObject
                 {
@@ -347,7 +293,7 @@ public class GameManager
             root["Lobby"] = new JsonObject
             {
                 ["Players"] = playersArray,
-                ["PlayerCount"] = _lobbyPlayers.Count,
+                ["PlayerCount"] = _lobby.PlayerCount,
                 ["TotalRounds"] = TotalRounds,
                 ["RoundDurationSeconds"] = RoundDurationSeconds,
                 ["CanForceStart"] = canForce,
@@ -400,7 +346,7 @@ public class GameManager
                 {
                     if (CurrentRound < TotalRounds)
                     {
-                        int needed = Math.Max(1, (int)Math.Ceiling(_lobbyPlayers.Count / 2.0));
+                        int needed = Math.Max(1, (int)Math.Ceiling(_lobby.PlayerCount / 2.0));
                         bool useSameMap = _sameVotes.Count >= needed;
                         _sameVotes.Clear();
                         CurrentRound++;
