@@ -32,6 +32,8 @@ public class GameManager
     private readonly ISoundEffectService _soundService;
     private readonly AudioObserver _audioObserver;
 
+    private readonly Dictionary<string, List<ICommand>> _cheatHistory = new();
+
     public event Action<string, float>? OnSoundEffectPlayed;
 
     private GameStage _stage = GameStage.Lobby;
@@ -102,6 +104,7 @@ public class GameManager
         {
             _lobby.RemovePlayer(connectionId);
             _Match.RemovePlayer(connectionId);
+            _cheatHistory.Remove(connectionId);
             bool removed = _players.TryRemove(connectionId, out player);
 
             if (_stage == GameStage.Lobby)
@@ -209,6 +212,7 @@ public class GameManager
             _leaderboard.RegisterPlayer(lp.Id, lp.Name);
         }
 
+        _cheatHistory.Clear();
         _Match.ResetForNewRound(SelectedMapType);
         _stage = GameStage.InGame;
         _Match.NotifyRoundStarted(CurrentRound, SelectedMapType);
@@ -220,6 +224,7 @@ public class GameManager
         {
             _stage = GameStage.Lobby;
             _lobby.ResetReadyStatus();
+            _cheatHistory.Clear();
             CurrentRound = 1;
             RemainingSeconds = RoundDurationSeconds;
             RoundWinnerName = string.Empty;
@@ -253,6 +258,18 @@ public class GameManager
             root["Champion"] = ChampionName;
             root["SameMapVotes"] = _sameVotes.Count;
             root["SameMapVotesNeeded"] = Math.Max(1, (int)Math.Ceiling(_lobby.PlayerCount / 2.0));
+
+            var activeCheatsObj = new JsonObject();
+            foreach (var kvp in _cheatHistory)
+            {
+                var arr = new JsonArray();
+                foreach (var cmd in kvp.Value)
+                {
+                    arr.Add(cmd.Name);
+                }
+                activeCheatsObj[kvp.Key] = arr;
+            }
+            root["ActiveCheats"] = activeCheatsObj;
 
             // Leaderboard
             var standings = _leaderboard.GetStandings();
@@ -349,6 +366,7 @@ public class GameManager
                         int needed = Math.Max(1, (int)Math.Ceiling(_lobby.PlayerCount / 2.0));
                         bool useSameMap = _sameVotes.Count >= needed;
                         _sameVotes.Clear();
+                        _cheatHistory.Clear();
                         CurrentRound++;
                         RemainingSeconds = RoundDurationSeconds;
                         _Match.ResetForNewRound(SelectedMapType, useSameMap);
@@ -451,6 +469,66 @@ public class GameManager
             if (!_sameVotes.Remove(connectionId))
             {
                 _sameVotes.Add(connectionId);
+            }
+        }
+    }
+
+    public void ActivateCheat(string connectionId, string cheatCode)
+    {
+        lock (_lock)
+        {
+            if(_stage != GameStage.InGame)
+            {
+                return;
+            }
+            if(!_players.TryGetValue(connectionId, out var player) || !player.IsAlive)
+            {
+                return;
+            }
+
+            ICommand? command = cheatCode.Trim().ToLower() switch
+            {
+                "noclip" => new CheatCode_PassWalls(player),
+                "infinitebombs" => new CheatCode_InfiniteBombs(player),
+                _ => null
+            };
+
+            if(command != null)
+            {
+                if (!_cheatHistory.TryGetValue(connectionId, out var activeList))
+                {
+                    activeList = new List<ICommand>();
+                    _cheatHistory[connectionId] = activeList;
+                }
+
+                if (activeList.Any(c => c.Name == command.Name))
+                {
+                    return;
+                }
+
+                command.Execute();
+                activeList.Add(command);
+            }
+        }
+    }
+
+    public void UndoCheat(string connectionId, string cheatCode)
+    {
+        lock (_lock)
+        {
+            if(_stage != GameStage.InGame)
+            {
+                return;
+            }
+            string target = cheatCode.Trim().ToLower();
+            if (_cheatHistory.TryGetValue(connectionId, out var activeList))
+            {
+                ICommand? command = activeList.FirstOrDefault(c => c.Name == target);
+                if (command != null)
+                {
+                    command.Undo();
+                    activeList.Remove(command);
+                }
             }
         }
     }
