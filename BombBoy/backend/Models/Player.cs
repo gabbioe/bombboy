@@ -29,7 +29,7 @@ public class Player
     public bool HasShield { get; set; } = false;
     public int ShieldDuration { get; set; } = 0;
 
-
+    public bool CanPassThroughWalls { get; set; } = false; //for cheats, specifically passing walls lol
     
 
 
