@@ -3,10 +3,8 @@ using BombBoy.Models;
 using BombBoy.Models.Observer;
 using BombBoy.Models.Strategies;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json.Nodes;
 
 namespace BombBoy.Services;
 
@@ -20,11 +18,13 @@ public enum GameStage
 
 public class GameManager
 {
-    private readonly ConcurrentDictionary<string, Player> _players = new();
     private readonly object _lock = new();
-    private readonly HashSet<string> _sameVotes = new();
 
     private readonly LobbyService _lobby = new();
+    private readonly RoundService _round = new();
+    private readonly PlayerService _players = new();
+    private readonly CheatService _cheats = new();
+    private readonly GameStateService _gameState = new();
     private readonly Match _Match = new Match();
     private readonly LeaderboardObserver _leaderboard = new();
     private readonly GameEventLoggerObserver _logger = new();
@@ -32,20 +32,26 @@ public class GameManager
     private readonly ISoundEffectService _soundService;
     private readonly AudioObserver _audioObserver;
 
-    private readonly Dictionary<string, List<ICommand>> _cheatHistory = new();
-
     public event Action<string, float>? OnSoundEffectPlayed;
 
-    private GameStage _stage = GameStage.Lobby;
+    public int TotalRounds
+    {
+        get => _round.TotalRounds;
+        set => _round.TotalRounds = value;
+    }
 
-    public int TotalRounds { get; set; } = 5;
-    public int RoundDurationSeconds { get; set; } = 180;
-    public int CurrentRound { get; private set; } = 1;
-    public float RemainingSeconds { get; private set; } = 180f;
-    public float IntermissionCountdown { get; private set; } = 0f;
-    public string SelectedMapType { get; private set; } = "normal";
-    public string RoundWinnerName { get; private set; } = string.Empty;
-    public string ChampionName { get; private set; } = string.Empty;
+    public int RoundDurationSeconds
+    {
+        get => _round.RoundDurationSeconds;
+        set => _round.RoundDurationSeconds = value;
+    }
+
+    public int CurrentRound => _round.CurrentRound;
+    public float RemainingSeconds => _round.RemainingSeconds;
+    public float IntermissionCountdown => _round.IntermissionCountdown;
+    public string SelectedMapType => _round.SelectedMapType;
+    public string RoundWinnerName => _round.RoundWinnerName;
+    public string ChampionName => _round.ChampionName;
 
     public GameManager()
     {
@@ -64,19 +70,14 @@ public class GameManager
     {
         lock (_lock)
         {
-            string name = $"Player-{connectionId[..Math.Min(4, connectionId.Length)]}";
+            string name = _players.FormatPlayerName(connectionId);
             if (!_lobby.TryAddPlayer(connectionId, name))
                 return (null, true);
 
             _leaderboard.RegisterPlayer(connectionId, name);
             _soundService.PlaySound(SoundEffectType.LobbyJoin);
 
-            var player = new Player
-            {
-                Id = connectionId,
-                Name = name
-            };
-
+            var player = _players.RegisterPlayer(connectionId, name, null);
             int[]? startPos = _Match.AddPlayer(player);
             if (startPos != null)
             {
@@ -84,7 +85,6 @@ public class GameManager
                 player.Y = startPos[1];
             }
 
-            _players[connectionId] = player;
             return (player, false);
         }
     }
@@ -104,10 +104,10 @@ public class GameManager
         {
             _lobby.RemovePlayer(connectionId);
             _Match.RemovePlayer(connectionId);
-            _cheatHistory.Remove(connectionId);
-            bool removed = _players.TryRemove(connectionId, out player);
+            _cheats.RemovePlayer(connectionId);
+            bool removed = _players.TryRemovePlayer(connectionId, out player);
 
-            if (_stage == GameStage.Lobby)
+            if (_round.Stage == GameStage.Lobby)
             {
                 _leaderboard.RemovePlayer(connectionId);
             }
@@ -116,9 +116,8 @@ public class GameManager
 
             if (_lobby.PlayerCount == 0)
             {
-                _stage = GameStage.Lobby;
+                _round.ResetToEmptyLobby();
                 _leaderboard.Clear();
-                CurrentRound = 1;
             }
 
             return removed;
@@ -129,11 +128,11 @@ public class GameManager
     {
         lock (_lock)
         {
-            if (_stage != GameStage.Lobby) return;
+            if (_round.Stage != GameStage.Lobby) return;
 
-            if (_lobby.TryToggleReady(connectionId))
+            if (_lobby.TryToggleReady(connectionId) && _lobby.CanAutoStart)
             {
-                CheckAutoStart();
+                StartNewMatchSession();
             }
         }
     }
@@ -142,7 +141,7 @@ public class GameManager
     {
         lock (_lock)
         {
-            if (_stage != GameStage.Lobby) return;
+            if (_round.Stage != GameStage.Lobby) return;
 
             _lobby.TryVoteMap(connectionId, mapType);
         }
@@ -152,11 +151,7 @@ public class GameManager
     {
         lock (_lock)
         {
-            if (_stage != GameStage.Lobby) return false;
-            if (!_lobby.IsHost(connectionId)) return false;
-
-            TotalRounds = Math.Clamp(rounds, 1, 10);
-            return true;
+            return _lobby.IsHost(connectionId) && _round.TrySetMatchRounds(rounds);
         }
     }
 
@@ -164,16 +159,7 @@ public class GameManager
     {
         lock (_lock)
         {
-            if (_stage != GameStage.Lobby) return false;
-            if (!_lobby.IsHost(connectionId)) return false;
-
-            int[] allowed = { 30, 60, 120, 150, 180 };
-            if (allowed.Contains(durationSeconds))
-            {
-                RoundDurationSeconds = durationSeconds;
-                return true;
-            }
-            return false;
+            return _lobby.IsHost(connectionId) && _round.TrySetMatchDuration(durationSeconds);
         }
     }
 
@@ -181,7 +167,7 @@ public class GameManager
     {
         lock (_lock)
         {
-            if (_stage != GameStage.Lobby || !_lobby.CanForceStart(connectionId))
+            if (_round.Stage != GameStage.Lobby || !_lobby.CanForceStart(connectionId))
                 return false;
 
             StartNewMatchSession();
@@ -189,22 +175,10 @@ public class GameManager
         }
     }
 
-    private void CheckAutoStart()
-    {
-        if (_lobby.CanAutoStart)
-        {
-            StartNewMatchSession();
-        }
-    }
-
     private void StartNewMatchSession()
     {
-        SelectedMapType = _lobby.ChooseMapType();
-
-        CurrentRound = 1;
-        RemainingSeconds = RoundDurationSeconds;
-        RoundWinnerName = string.Empty;
-        ChampionName = string.Empty;
+        string selectedMapType = _lobby.ChooseMapType();
+        _round.StartNewMatch(selectedMapType);
 
         _leaderboard.Clear();
         foreach (var lp in _lobby.GetPlayers())
@@ -212,23 +186,18 @@ public class GameManager
             _leaderboard.RegisterPlayer(lp.Id, lp.Name);
         }
 
-        _cheatHistory.Clear();
-        _Match.ResetForNewRound(SelectedMapType);
-        _stage = GameStage.InGame;
-        _Match.NotifyRoundStarted(CurrentRound, SelectedMapType);
+        _cheats.Clear();
+        _Match.ResetForNewRound(_round.SelectedMapType);
+        _Match.NotifyRoundStarted(_round.CurrentRound, _round.SelectedMapType);
     }
 
     public void ReturnToLobby()
     {
         lock (_lock)
         {
-            _stage = GameStage.Lobby;
+            _round.ReturnToLobby();
             _lobby.ResetReadyStatus();
-            _cheatHistory.Clear();
-            CurrentRound = 1;
-            RemainingSeconds = RoundDurationSeconds;
-            RoundWinnerName = string.Empty;
-            ChampionName = string.Empty;
+            _cheats.Clear();
         }
     }
 
@@ -236,88 +205,7 @@ public class GameManager
     {
         lock (_lock)
         {
-            string matchMapJson = _Match.GetFullGameMapJson();
-            JsonObject root;
-            try
-            {
-                root = JsonNode.Parse(matchMapJson)?.AsObject() ?? new JsonObject();
-            }
-            catch
-            {
-                root = new JsonObject();
-            }
-
-            root["Stage"] = _stage.ToString();
-            root["CurrentRound"] = CurrentRound;
-            root["TotalRounds"] = TotalRounds;
-            root["RemainingSeconds"] = (int)Math.Ceiling(RemainingSeconds);
-            root["RoundDuration"] = RoundDurationSeconds;
-            root["IntermissionCountdown"] = (int)Math.Ceiling(IntermissionCountdown);
-            root["SelectedMapType"] = SelectedMapType;
-            root["RoundWinner"] = RoundWinnerName;
-            root["Champion"] = ChampionName;
-            root["SameMapVotes"] = _sameVotes.Count;
-            root["SameMapVotesNeeded"] = Math.Max(1, (int)Math.Ceiling(_lobby.PlayerCount / 2.0));
-
-            var activeCheatsObj = new JsonObject();
-            foreach (var kvp in _cheatHistory)
-            {
-                var arr = new JsonArray();
-                foreach (var cmd in kvp.Value)
-                {
-                    arr.Add(cmd.Name);
-                }
-                activeCheatsObj[kvp.Key] = arr;
-            }
-            root["ActiveCheats"] = activeCheatsObj;
-
-            // Leaderboard
-            var standings = _leaderboard.GetStandings();
-            var lbArray = new JsonArray();
-            foreach (var s in standings)
-            {
-                bool isHost = _lobby.IsHost(s.PlayerId);
-                lbArray.Add(new JsonObject
-                {
-                    ["PlayerId"] = s.PlayerId,
-                    ["PlayerName"] = s.PlayerName,
-                    ["IsHost"] = isHost,
-                    ["Kills"] = s.Kills,
-                    ["Deaths"] = s.Deaths,
-                    ["RoundWins"] = s.RoundWins,
-                    ["Score"] = s.Score
-                });
-            }
-            root["Leaderboard"] = lbArray;
-
-            // Lobby info
-            bool canForce = _lobby.CanForceStart();
-            bool canAuto = _lobby.CanAutoStart;
-
-            var playersArray = new JsonArray();
-            foreach (var lp in _lobby.GetPlayers())
-            {
-                playersArray.Add(new JsonObject
-                {
-                    ["Id"] = lp.Id,
-                    ["Name"] = lp.Name,
-                    ["IsHost"] = lp.IsHost,
-                    ["IsReady"] = lp.IsReady,
-                    ["MapVote"] = lp.MapVote
-                });
-            }
-
-            root["Lobby"] = new JsonObject
-            {
-                ["Players"] = playersArray,
-                ["PlayerCount"] = _lobby.PlayerCount,
-                ["TotalRounds"] = TotalRounds,
-                ["RoundDurationSeconds"] = RoundDurationSeconds,
-                ["CanForceStart"] = canForce,
-                ["CanAutoStart"] = canAuto
-            };
-
-            return root.ToJsonString();
+            return _gameState.BuildFullMapJson(_Match, _round, _lobby, _leaderboard, _cheats);
         }
     }
 
@@ -325,9 +213,7 @@ public class GameManager
     {
         lock (_lock)
         {
-            if (_stage != GameStage.InGame) return;
-
-            if (_players.TryGetValue(connectionId, out var player) && player.IsAlive)
+            if (_round.Stage == GameStage.InGame && _players.TryGetAlivePlayer(connectionId, out _))
             {
                 _Match.MovePlayer(dx, dy, connectionId);
             }
@@ -338,80 +224,49 @@ public class GameManager
     {
         lock (_lock)
         {
-            if (_stage == GameStage.InGame)
+            if (_round.Stage == GameStage.InGame)
             {
-                RemainingSeconds = Math.Max(0, RemainingSeconds - deltaTime);
+                _round.TickTimer(deltaTime);
                 _Match.Update(deltaTime);
 
-                var alive = _Match.GetAlivePlayers();
-                if (alive.Count <= 1 || RemainingSeconds <= 0)
+                if (_round.TryConcludeRound(_Match.GetAlivePlayers(), out var winner))
                 {
-                    _stage = GameStage.RoundEnd;
-                    IntermissionCountdown = 8.0f;
-                    _sameVotes.Clear();
-
-                    Player? winner = alive.Count == 1 ? alive[0] : null;
-                    RoundWinnerName = winner != null ? winner.Name : "Draw (No Survivors)";
-
-                    _Match.NotifyRoundEnded(winner, CurrentRound, TotalRounds);
+                    _Match.NotifyRoundEnded(winner, _round.CurrentRound, _round.TotalRounds);
                 }
             }
-            else if (_stage == GameStage.RoundEnd)
+            else if (_round.Stage == GameStage.RoundEnd)
             {
-                IntermissionCountdown -= deltaTime;
-                if (IntermissionCountdown <= 0)
+                if (_round.TickIntermission(deltaTime, _lobby.PlayerCount, out bool startNextRound, out bool useSameMap))
                 {
-                    if (CurrentRound < TotalRounds)
+                    if (startNextRound)
                     {
-                        int needed = Math.Max(1, (int)Math.Ceiling(_lobby.PlayerCount / 2.0));
-                        bool useSameMap = _sameVotes.Count >= needed;
-                        _sameVotes.Clear();
-                        _cheatHistory.Clear();
-                        CurrentRound++;
-                        RemainingSeconds = RoundDurationSeconds;
-                        _Match.ResetForNewRound(SelectedMapType, useSameMap);
-                        _stage = GameStage.InGame;
-                        _Match.NotifyRoundStarted(CurrentRound, SelectedMapType);
+                        _cheats.Clear();
+                        _Match.ResetForNewRound(_round.SelectedMapType, useSameMap);
+                        _Match.NotifyRoundStarted(_round.CurrentRound, _round.SelectedMapType);
                     }
                     else
                     {
-                        _stage = GameStage.MatchEnd;
                         var standings = _leaderboard.GetStandings();
                         var topPlayer = standings.FirstOrDefault();
-                        ChampionName = topPlayer != null ? topPlayer.PlayerName : "Nobody";
-                        _Match.NotifyMatchEnded(topPlayer != null ? _players.GetValueOrDefault(topPlayer.PlayerId) : null, standings);
+                        _round.SetChampion(topPlayer?.PlayerName);
+                        _Match.NotifyMatchEnded(_players.GetPlayerOrDefault(topPlayer?.PlayerId), standings);
                     }
                 }
             }
         }
     }
 
-    public static IExplosionStrategy ResolveStrategy(string? strategyName)
-    {
-        if (string.IsNullOrWhiteSpace(strategyName))
-            return new ClassicCrossExplosionStrategy();
-
-        string norm = strategyName.Trim().ToLowerInvariant();
-        if (norm.Contains("diag") || norm == "2") return new DiagonalExplosionStrategy();
-        if (norm.Contains("area") || norm.Contains("box") || norm == "3") return new AreaBoxExplosionStrategy();
-        if (norm.Contains("pierc") || norm == "4") return new PiercingLineExplosionStrategy();
-        if (norm.Contains("flood") || norm == "5") return new FloodFillExplosionStrategy();
-        return new ClassicCrossExplosionStrategy();
-    }
+    public static IExplosionStrategy ResolveStrategy(string? strategyName) =>
+        PlayerService.ResolveStrategy(strategyName);
 
     public void PlaceBomb(string connectionId, string? strategyName = null)
     {
         lock (_lock)
         {
-            if (_stage != GameStage.InGame) return;
-
-            if (_players.TryGetValue(connectionId, out var player) && player.IsAlive)
+            if (_round.Stage == GameStage.InGame && _players.TryGetAlivePlayer(connectionId, out var player))
             {
-                IExplosionStrategy strategy = !string.IsNullOrWhiteSpace(strategyName)
-                    ? ResolveStrategy(strategyName)
-                    : player.ActiveBombStrategy;
-
-                _Match.PlaceBomb(player, strategy);
+                var strategy = _players.ResolveBombStrategy(player!, strategyName);
+                _Match.PlaceBomb(player!, strategy);
             }
         }
     }
@@ -420,10 +275,7 @@ public class GameManager
     {
         lock (_lock)
         {
-            if (_players.TryGetValue(connectionId, out var player))
-            {
-                player.ActiveBombStrategy = ResolveStrategy(strategyName);
-            }
+            _players.SetPlayerStrategy(connectionId, strategyName);
         }
     }
 
@@ -431,9 +283,7 @@ public class GameManager
     {
         lock (_lock)
         {
-            return _players.Values
-                .Select(p => new PlayerDto(p.Id, p.Name, p.X, p.Y, p.IsAlive))
-                .ToList();
+            return _players.GetAllPlayers();
         }
     }
 
@@ -451,11 +301,9 @@ public class GameManager
     {
         lock (_lock)
         {
-            if (_stage != GameStage.InGame) return;
-
-            if (_players.TryGetValue(connectionId, out var player) && player.IsAlive)
+            if (_round.Stage == GameStage.InGame && _players.TryGetAlivePlayer(connectionId, out var player))
             {
-                _Match.UseWeapon(player);
+                _Match.UseWeapon(player!);
             }
         }
     }
@@ -464,12 +312,7 @@ public class GameManager
     {
         lock (_lock)
         {
-            if(_stage != GameStage.RoundEnd) return;
-
-            if (!_sameVotes.Remove(connectionId))
-            {
-                _sameVotes.Add(connectionId);
-            }
+            _round.ToggleSameMapVote(connectionId);
         }
     }
 
@@ -477,37 +320,9 @@ public class GameManager
     {
         lock (_lock)
         {
-            if(_stage != GameStage.InGame)
+            if (_round.Stage == GameStage.InGame && _players.TryGetAlivePlayer(connectionId, out var player))
             {
-                return;
-            }
-            if(!_players.TryGetValue(connectionId, out var player) || !player.IsAlive)
-            {
-                return;
-            }
-
-            ICommand? command = cheatCode.Trim().ToLower() switch
-            {
-                "noclip" => new CheatCode_PassWalls(player),
-                "infinitebombs" => new CheatCode_InfiniteBombs(player),
-                _ => null
-            };
-
-            if(command != null)
-            {
-                if (!_cheatHistory.TryGetValue(connectionId, out var activeList))
-                {
-                    activeList = new List<ICommand>();
-                    _cheatHistory[connectionId] = activeList;
-                }
-
-                if (activeList.Any(c => c.Name == command.Name))
-                {
-                    return;
-                }
-
-                command.Execute();
-                activeList.Add(command);
+                _cheats.ActivateCheat(player!, cheatCode);
             }
         }
     }
@@ -516,21 +331,10 @@ public class GameManager
     {
         lock (_lock)
         {
-            if(_stage != GameStage.InGame)
+            if (_round.Stage == GameStage.InGame)
             {
-                return;
-            }
-            string target = cheatCode.Trim().ToLower();
-            if (_cheatHistory.TryGetValue(connectionId, out var activeList))
-            {
-                ICommand? command = activeList.FirstOrDefault(c => c.Name == target);
-                if (command != null)
-                {
-                    command.Undo();
-                    activeList.Remove(command);
-                }
+                _cheats.UndoCheat(connectionId, cheatCode);
             }
         }
     }
-
 }
