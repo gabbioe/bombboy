@@ -1,4 +1,4 @@
-﻿using BombBoy.Models.Items;
+using BombBoy.Models.Items;
 
 namespace BombBoy.Models.ItemFactories
 {
@@ -11,11 +11,13 @@ namespace BombBoy.Models.ItemFactories
         public Powerup CreatePowerup(int x, int y)
         {
             // only spawns Frozen themed items (+ no extra life)
-            int choice = _rand.Next(0, 2);
+            int choice = _rand.Next(0, 4);
             return choice switch
             {
                 0 => new FrozenStatPowerup(x, y, _rand.Next(0, 2) == 0 ? "BombRange" : "BombCount"),
-                _ => new FrozenShieldPowerup(x, y)
+                1 => new FrozenShieldPowerup(x, y),
+                2 => new SpeedPowerup(x, y),
+                _ => new WallPassPowerup(x, y)
             };
         }
 

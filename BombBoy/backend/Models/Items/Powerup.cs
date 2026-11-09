@@ -1,4 +1,5 @@
-﻿using BombBoy.Models;
+using BombBoy.Models;
+using BombBoy.Models.Decorator;
 
 namespace BombBoy.Models.Items
 {
@@ -79,8 +80,7 @@ namespace BombBoy.Models.Items
 
         protected override void Use(Player player)
         {
-            player.HasShield = true;
-            player.ShieldDuration = Duration;
+            player.Decorate(c => new ImmortalDecorator(c, Duration));
         }
 
         public void Update(float deltaTime)
@@ -89,6 +89,30 @@ namespace BombBoy.Models.Items
             {
                 Duration -= (int)deltaTime;
             }
+        }
+    }
+
+    public class WallPassPowerup : Powerup
+    {
+        public WallPassPowerup(int x, int y) : base(x, y) { }
+
+        public override string GetEmoji() => "👻";
+
+        protected override void Use(Player player)
+        {
+            player.Decorate(c => new WallPassDecorator(c));
+        }
+    }
+
+    public class SpeedPowerup : Powerup
+    {
+        public SpeedPowerup(int x, int y) : base(x, y) { }
+
+        public override string GetEmoji() => "⚡";
+
+        protected override void Use(Player player)
+        {
+            player.Decorate(c => new SpeedDecorator(c, 1));
         }
     }
 

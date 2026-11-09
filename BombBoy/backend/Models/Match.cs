@@ -261,6 +261,20 @@ namespace BombBoy.Models
                         }
                         // check for item pickup
                         CheckPickups(player);
+
+                        // SpeedDecorator effect: move an additional step if speed bonus is active and next tile is clear
+                        if (player.IsAlive && player.SpeedBonus > 0)
+                        {
+                            int nx = player.X + dx;
+                            int ny = player.Y + dy;
+                            if (GameMap.IsValidCoord(nx, ny) && (player.CanPassThroughWalls || GameMap.CheckIfCanMove(nx, ny)))
+                            {
+                                player.X = nx;
+                                player.Y = ny;
+                                CheckPickups(player);
+                            }
+                        }
+
                         return true;
 
 
@@ -309,6 +323,7 @@ namespace BombBoy.Models
                 p.HasShield = false;
                 p.ShieldDuration = 0;
                 p.CanPassThroughWalls = false; // cheat
+                p.ResetDecorators();
                 p.CurrentWeapon = null;
                 p.BombCount = 1;
                 p.BombRange = 1;
@@ -408,14 +423,7 @@ namespace BombBoy.Models
             // update shields (tbh idk ar prieš ar po active bombs tickerių dėti logiką)
             foreach (var player in Players.Values)
             {
-                if (player.HasShield)
-                {
-                    player.ShieldDuration -= (int)deltaTime;
-                    if (player.ShieldDuration <= 0)
-                    {
-                        player.HasShield = false;
-                    }
-                }
+                player.UpdateDecorators(deltaTime);
                 if (player.IsAlive && GameMap.GetTile(player.X, player.Y) is WaterTile waterTile)
                 {
                     if (waterTile.CanDrown())
@@ -558,21 +566,8 @@ namespace BombBoy.Models
                     case "Right": targetX += 1; break;
                     case "Left": targetX -= 1; break;
                 }
-                // check if target is a player
-                var targetPlayer = Players.Values.FirstOrDefault(p => p.X == targetX && p.Y == targetY && p.IsAlive);
-                if (targetPlayer != null)
-                {
-                    ApplyDamage(targetPlayer, player);
-                }
-                else
-                {
-                    // check if target is a destructible tile
-                    var tile = GameMap.GetTile(targetX, targetY);
-                    if (tile != null && tile.DoDamage())
-                    {
-                        GameMap.DestroyTile(targetX, targetY);
-                    }
-                }
+                // Delegate to Bridge Implementor (spawns 💥 for Knife, ❄️ for Popsicle, damages players & blocks)
+                weapon.Effect.Apply(player, GameMap, targetX, targetY);
             }
             else if (weapon is LaserGun || weapon is FrozenLaserGun)
             {
@@ -597,7 +592,7 @@ namespace BombBoy.Models
                     var tile = GameMap.GetTile(cx, cy);
                     if (tile.Type == "IndestructableTile") break;
 
-                    GameMap.SpawnBlast(cx, cy, 5);
+                    weapon.Effect.Apply(player, GameMap, cx, cy);
                     if (tile is DestructableTile) break;
 
                     cx += dx;
@@ -711,7 +706,7 @@ namespace BombBoy.Models
             map.OnBlockDestroyed += OnBlockDestroyed;
             map.OnBlastSpawnedWithOwner += (bx, by, durationTicks, ownerId) =>
             {
-                var blast = new Blast(bx, by, 0.5f, ownerId);
+                var blast = new Blast(bx, by, 0.5f, ownerId, map.CurrentBlastEmoji);
                 if (!Entities.ContainsKey((bx, by)))
                     Entities[(bx, by)] = new List<Entity>();
                 Entities[(bx, by)].Add(blast);

@@ -18,6 +18,7 @@ public class Map : IPrototype<Map>
     private BasicTile[,] MapTileGrid;
 
     public string? CurrentBlastOwnerId { get; set; }
+    public string CurrentBlastEmoji { get; set; } = "💥";
     public event Action<int, int, int>? OnBlastSpawned;
     public event Action<int, int, int, string?>? OnBlastSpawnedWithOwner;
     public event Action<int, int>? OnBlockDestroyed;

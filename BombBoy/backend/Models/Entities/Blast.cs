@@ -7,7 +7,7 @@ public class Blast : Entity
     public int Y { get; set; }
     public string? OwnerId { get; set; }
 
-    public Blast(int x, int y, float duration = 0.5f, string? ownerId = null) : base(layer: 0, type: "💥")
+    public Blast(int x, int y, float duration = 0.5f, string? ownerId = null, string type = "💥") : base(layer: 0, type: type)
     {
         X = x;
         Y = y;

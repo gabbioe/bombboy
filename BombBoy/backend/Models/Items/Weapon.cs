@@ -1,4 +1,5 @@
-﻿using BombBoy.Models;
+using BombBoy.Models;
+using BombBoy.Models.Bridge;
 using BombBoy.Models.Tiles;
 
 namespace BombBoy.Models.Items
@@ -11,13 +12,17 @@ namespace BombBoy.Models.Items
         public int MaxUses { get; set; }
         private int ID { get; set; }
 
-        public Weapon(int x, int y, int maxUses)
+        // Bridge Implementor Reference
+        public IWeaponEffect Effect { get; set; }
+
+        public Weapon(int x, int y, int maxUses, IWeaponEffect? effect = null)
         {
             X = x;
             Y = y;
             MaxUses = maxUses;
             UsesCount = maxUses;
             ID = new Random().Next(1000, 9999);
+            Effect = effect ?? new FireExplosiveEffect();
         }
 
         public abstract string GetEmoji();
@@ -49,7 +54,7 @@ namespace BombBoy.Models.Items
     // one use long range weapon
     public class LaserGun : Weapon
     {        
-        public LaserGun(int x, int y) : base(x, y, 1) { }
+        public LaserGun(int x, int y, IWeaponEffect? effect = null) : base(x, y, 1, effect) { }
 
         public override string GetEmoji() => "🔫";
 
@@ -62,7 +67,7 @@ namespace BombBoy.Models.Items
     // 3 uses mid range (?) weapon
     public class ThrowableWeapon : Weapon
     {
-        public ThrowableWeapon(int x, int y) : base(x, y, 3) { }
+        public ThrowableWeapon(int x, int y, IWeaponEffect? effect = null) : base(x, y, 3, effect) { }
 
         public override string GetEmoji() => "🧨";
 
@@ -75,7 +80,7 @@ namespace BombBoy.Models.Items
     // 3 uses close range weapon
     public class Knife : Weapon
     {
-        public Knife(int x, int y) : base(x, y, 3) { }
+        public Knife(int x, int y, IWeaponEffect? effect = null) : base(x, y, 3, effect) { }
         public override string GetEmoji() => "🔪";
         protected override void ExecuteEffect(Player player)
         {
@@ -86,7 +91,7 @@ namespace BombBoy.Models.Items
     // concrete factory nr. 2
     public class Popsicle : Knife
     {
-        public Popsicle(int x, int y) : base(x, y)
+        public Popsicle(int x, int y) : base(x, y, new FrostFreezeEffect())
         {
             MaxUses = 2;
             UsesCount = 2;
@@ -96,7 +101,7 @@ namespace BombBoy.Models.Items
 
     public class FrozenLaserGun : LaserGun
     {
-        public FrozenLaserGun(int x, int y) : base(x, y) { }
+        public FrozenLaserGun(int x, int y) : base(x, y, new FrostFreezeEffect()) { }
         public override string GetEmoji() => "🍧";
 
         protected override void ExecuteEffect(Player player)
@@ -107,7 +112,7 @@ namespace BombBoy.Models.Items
 
     public class SnowballWeapon : ThrowableWeapon
     {
-        public SnowballWeapon(int x, int y) : base(x, y) { }
+        public SnowballWeapon(int x, int y) : base(x, y, new FrostFreezeEffect()) { }
         public override string GetEmoji() => "⚪";
     }
 }

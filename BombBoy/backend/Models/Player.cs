@@ -1,6 +1,8 @@
+using BombBoy.Models.Decorator;
 using BombBoy.Models.GridEntities;
 using BombBoy.Models.Items;
 using BombBoy.Models.Strategies;
+using System;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
@@ -26,15 +28,49 @@ public class Player
     public int Lives { get; set; } = 1;
 
     public Weapon? CurrentWeapon { get; set; } = null;
-    public bool HasShield { get; set; } = false;
+
+    // Decorator Component for power-ups (Speed, WallPass, Immortal/Shield)
+    public IPlayerComponent Component { get; private set; } = new BasicPlayerComponent();
+
+    private bool _manualNoclip = false;
+
+    public void Decorate(Func<IPlayerComponent, IPlayerComponent> decoratorFactory)
+    {
+        Component = decoratorFactory(Component);
+    }
+
+    public void ResetDecorators()
+    {
+        Component = new BasicPlayerComponent();
+        _manualNoclip = false;
+    }
+
+    public bool HasShield
+    {
+        get => Component.HasShield;
+        set
+        {
+            if (value && !Component.HasShield)
+            {
+                Decorate(c => new ImmortalDecorator(c, 10f));
+            }
+            else if (!value && Component.HasShield)
+            {
+                // Absorb / clear active shields
+                Component.TakeDamage(this);
+            }
+        }
+    }
+
     public int ShieldDuration { get; set; } = 0;
 
-    public bool CanPassThroughWalls { get; set; } = false; //for cheats, specifically passing walls lol
-    
+    public bool CanPassThroughWalls
+    {
+        get => _manualNoclip || Component.CanPassThroughWalls;
+        set => _manualNoclip = value;
+    }
 
-
-
-
+    public int SpeedBonus => Component.SpeedBonus;
 
     //reikalingas tarp match, galvoju sita padaryti matcho player klase, game manager atskira turetu turet
     public int StartingLocation { get;set;}
@@ -73,23 +109,11 @@ public class Player
     /// </summary>
     public bool TakeDamage()
     {
-        // shield absorbs one hit entirely
-        if (HasShield)
-        {
-            HasShield = false;
-            ShieldDuration = 0;
-            return false;
-        }
-
-        Lives--;
-        if (Lives <= 0)
-        {
-            Lives = 0;
-            IsAlive = false;
-            return true;
-        }
-        return false;
+        return Component.TakeDamage(this);
     }
 
-    
+    public void UpdateDecorators(float deltaTime)
+    {
+        Component.Update(deltaTime);
+    }
 }

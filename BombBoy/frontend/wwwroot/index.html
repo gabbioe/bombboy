@@ -1001,18 +1001,6 @@
     <!-- 2. GAME VIEW -->
     <section id="view-game" class="view-section">
         <div id="game-layout">
-            <!-- Cheat Code Box (Left of Map) -->
-            <div class="map-guide-card" style="width: 190px; padding: 10px 12px; flex-shrink: 0;">
-                <div class="map-guide-header" style="margin-bottom: 6px; padding-bottom: 4px;">
-                    <h4 class="map-guide-title" style="font-size: 12px;">Cheat Console</h4>
-                </div>
-                <input id="cheat-input" type="text" placeholder="noclip / infinitebombs"
-                    style="width: 100%; background: #121416; color: #f0f0f0; border: 1px solid #3c444d; border-radius: 4px; padding: 6px 8px; font-size: 12px; margin-bottom: 6px; outline: none;"
-                    onkeydown="if(event.key === 'Enter') submitCheat()" />
-                <button class="btn-action" style="width: 100%; padding: 6px 8px; font-size: 12px;" onclick="submitCheat()">Apply</button>
-                <div id="active-cheats-list" style="margin-top: 8px; display: flex; flex-direction: column; gap: 6px;"></div>
-            </div>
-
             <div id="game-container">
                 <div id="map-grid"></div>
                 <div id="entities-layer"></div>
