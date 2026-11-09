@@ -1001,6 +1001,18 @@
     <!-- 2. GAME VIEW -->
     <section id="view-game" class="view-section">
         <div id="game-layout">
+            <!-- Cheat Code Box (Left of Map) -->
+            <div class="map-guide-card" style="width: 190px; padding: 10px 12px; flex-shrink: 0;">
+                <div class="map-guide-header" style="margin-bottom: 6px; padding-bottom: 4px;">
+                    <h4 class="map-guide-title" style="font-size: 12px;">Cheat Console</h4>
+                </div>
+                <input id="cheat-input" type="text" placeholder="noclip / infinitebombs"
+                    style="width: 100%; background: #121416; color: #f0f0f0; border: 1px solid #3c444d; border-radius: 4px; padding: 6px 8px; font-size: 12px; margin-bottom: 6px; outline: none;"
+                    onkeydown="if(event.key === 'Enter') submitCheat()" />
+                <button class="btn-action" style="width: 100%; padding: 6px 8px; font-size: 12px;" onclick="submitCheat()">Apply</button>
+                <div id="active-cheats-list" style="margin-top: 8px; display: flex; flex-direction: column; gap: 6px;"></div>
+            </div>
+
             <div id="game-container">
                 <div id="map-grid"></div>
                 <div id="entities-layer"></div>
@@ -1262,6 +1274,7 @@
 
                 // Render views depending on stage
                 if (stage === "Lobby") {
+                    renderActiveCheats(null);
                     viewLobby.classList.add("active");
                     viewGame.classList.remove("active");
                     modalRoundEnd.style.display = "none";
@@ -1277,7 +1290,9 @@
                     if (parsed.EntityLayer) renderEntities(parsed.EntityLayer);
                     if (parsed.PlayerLayer) renderPlayers(parsed.PlayerLayer);
                     if (parsed.Leaderboard) renderLiveScoreboard(parsed.Leaderboard);
+                    renderActiveCheats(parsed.ActiveCheats);
                 } else if (stage === "RoundEnd") {
+                    renderActiveCheats(null);
                     viewLobby.classList.remove("active");
                     viewGame.classList.add("active");
                     modalMatchEnd.style.display = "none";
@@ -1299,6 +1314,7 @@
                         sameMapBtn.textContent = `Replay Same Map (${votes}/${needed})`;
                     }
                 } else if (stage === "MatchEnd") {
+                    renderActiveCheats(null);
                     viewLobby.classList.remove("active");
                     viewGame.classList.add("active");
                     modalRoundEnd.style.display = "none";
@@ -1683,6 +1699,58 @@
             }
         }
 
+        function submitCheat() {
+            const input = document.getElementById("cheat-input");
+            if (!input || !input.value.trim()) return;
+            if (connection && connection.state === signalR.HubConnectionState.Connected) {
+                connection.invoke("ActivateCheat", input.value.trim()).catch(err => console.error("ActivateCheat error:", err));
+                input.value = "";
+                input.blur();
+            }
+        }
+
+        function undoCheat(cheatCode) {
+            if (connection && connection.state === signalR.HubConnectionState.Connected) {
+                connection.invoke("UndoCheat", cheatCode).catch(err => console.error("UndoCheat error:", err));
+            }
+        }
+
+        let lastCheatsSerialized = "";
+        function renderActiveCheats(activeCheatsMap) {
+            const container = document.getElementById("active-cheats-list");
+            if (!container) return;
+
+            const myCheats = (activeCheatsMap && myConnectionId && Array.isArray(activeCheatsMap[myConnectionId]))
+                ? activeCheatsMap[myConnectionId]
+                : [];
+
+            const serialized = JSON.stringify(myCheats);
+            if (serialized === lastCheatsSerialized) return;
+            lastCheatsSerialized = serialized;
+
+            container.innerHTML = "";
+            if (myCheats.length === 0) return;
+
+            myCheats.forEach(cheat => {
+                const row = document.createElement("div");
+                row.style.cssText = "display: flex; align-items: center; justify-content: space-between; background: #121416; border: 1px solid #2b3137; border-radius: 4px; padding: 4px 6px; font-size: 11px;";
+
+                const label = document.createElement("span");
+                label.style.cssText = "color: #2ecc71; font-weight: 600;";
+                label.textContent = cheat;
+
+                const undoBtn = document.createElement("button");
+                undoBtn.className = "btn-action";
+                undoBtn.style.cssText = "padding: 2px 6px; font-size: 10px; background: #c0392b;";
+                undoBtn.textContent = "Undo";
+                undoBtn.onclick = () => undoCheat(cheat);
+
+                row.appendChild(label);
+                row.appendChild(undoBtn);
+                container.appendChild(row);
+            });
+        }
+
         function onStrategyChange(newStrat) {
             selectedStrategy = newStrat;
             if (strategySelectEl) strategySelectEl.value = newStrat;
@@ -1693,6 +1761,8 @@
 
         // Keyboard Listener
         window.addEventListener("keydown", (event) => {
+            if (document.activeElement && document.activeElement.tagName === "INPUT") return;
+
             if (event.key === "1") { onStrategyChange("classic"); return; }
             if (event.key === "2") { onStrategyChange("diagonal"); return; }
             if (event.key === "3") { onStrategyChange("area"); return; }

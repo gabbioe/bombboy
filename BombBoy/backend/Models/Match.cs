@@ -234,7 +234,7 @@ namespace BombBoy.Models
                 {
                     int x = Players[PlayerId].X;
                     int y = Players[PlayerId].Y;
-                    if (GameMap.CheckIfCanMove(x + dx, y + dy))
+                    if (GameMap.IsValidCoord(x + dx, y + dy) && ( player.CanPassThroughWalls ||GameMap.CheckIfCanMove(x + dx, y + dy)))
                     {
                         //Players[PlayerId].X = x+ dx;
                         //Players[PlayerId].Y = y+ dy;
@@ -275,6 +275,7 @@ namespace BombBoy.Models
         public void ResetForNewRound(string mapType = "normal", bool useSameMap = false)
         {
             CurrentMapType = mapType;
+            
             ActiveBombs.Clear();
             ActiveBlasts.Clear();
             _items.Clear();
@@ -307,6 +308,7 @@ namespace BombBoy.Models
                 p.Lives = 1;
                 p.HasShield = false;
                 p.ShieldDuration = 0;
+                p.CanPassThroughWalls = false; // cheat
                 p.CurrentWeapon = null;
                 p.BombCount = 1;
                 p.BombRange = 1;
@@ -423,6 +425,13 @@ namespace BombBoy.Models
                         player.IsAlive = false;
                         NotifyPlayerDied(player, null);
                     }
+                }
+                if(player.IsAlive && !player.CanPassThroughWalls && !GameMap.CheckIfCanMove(player.X, player.Y))
+                {
+                    player.HasShield = false;
+                    player.Lives = 0;
+                    player.IsAlive = false;
+                    NotifyPlayerDied(player, null);
                 }
             }            
             //update bombs

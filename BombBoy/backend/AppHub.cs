@@ -111,4 +111,16 @@ public class AppHub : Hub
     {
         _gameManager.SetSoundVolume(volume);
     }
+
+    public async Task ActivateCheat(string cheatCode)
+    {
+        _gameManager.ActivateCheat(Context.ConnectionId, cheatCode);
+        await Clients.All.SendAsync("Gametick", _gameManager.GetFullMap());
+    }
+
+    public async Task UndoCheat(string cheatCode)
+    {
+        _gameManager.UndoCheat(Context.ConnectionId, cheatCode);
+        await Clients.All.SendAsync("Gametick", _gameManager.GetFullMap());
+    }
 }
