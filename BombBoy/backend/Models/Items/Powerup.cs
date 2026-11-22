@@ -13,7 +13,7 @@ namespace BombBoy.Models.Items
         {
             X = x;
             Y = y;
-            ID = new Random().Next(1000, 9999);
+            ID = Random.Shared.Next(1000, 9999);
         }
 
         public abstract string GetEmoji();

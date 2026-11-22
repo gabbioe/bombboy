@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace BombBoy.Models.GridEntities;
 
@@ -24,14 +22,15 @@ public abstract class Entity : IComparable<Entity>
     //tarkime gali grazinti kita objekta(ora, itema, bbz kazka kitka)
     public abstract bool DoDamage();
 
-    public override string? ToString()
+    public override string ToString()
     {
         return _jsonFormating;
     }
 
     public int CompareTo(Entity? other)
     {
-        return this._drawingLayer.CompareTo(other._drawingLayer);
+        if (other is null) return 1;
+        return _drawingLayer.CompareTo(other._drawingLayer);
     }
 }
 

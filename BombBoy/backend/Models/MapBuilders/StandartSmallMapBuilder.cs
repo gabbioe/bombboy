@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using BombBoy.Models;
+﻿using BombBoy.Models;
 using BombBoy.Models.Tiles;
-
 
 namespace Bombboy.Models.MapBuilders
 {
@@ -11,19 +7,18 @@ namespace Bombboy.Models.MapBuilders
     {
         private int _sizeX = 7;
         private int _sizeY = 7;
-
         private int _blockSpawnChance = 50;
-
-        private int _WaterSpawnChance = 10;
-
+        private int _waterSpawnChance = 10;
         private bool _havePillars = true;
         private MapTileFactory _factory = new MapTileFactory();
+
         public IMapBuilder SetDimensions(int x, int y)
         {
             _sizeX = x;
             _sizeY = y;
             return this;
         }
+
         public IMapBuilder BuildBlockSpawnChance(int chance)
         {
             _blockSpawnChance = chance;
@@ -38,21 +33,19 @@ namespace Bombboy.Models.MapBuilders
 
         public IMapBuilder BuildWaterSpawnChance(int chance)
         {
-            _WaterSpawnChance = chance;
+            _waterSpawnChance = chance;
             return this;
         }
-
 
         public IMapBuilder BuildHavePillars(bool havePillars)
         {
             _havePillars = havePillars;
             return this;
         }
+
         public Map GetResult()
         {
-            return new Map(_sizeX, _sizeY, _blockSpawnChance, _WaterSpawnChance, _factory, _havePillars);
+            return new Map(_sizeX, _sizeY, _blockSpawnChance, _waterSpawnChance, _factory, _havePillars);
         }
-
-        
     }
 }

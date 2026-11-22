@@ -25,7 +25,7 @@ public class GameManager
     private readonly PlayerService _players = new();
     private readonly CheatService _cheats = new();
     private readonly GameStateService _gameState = new();
-    private readonly Match _Match = new Match();
+    private readonly Match _match = new Match();
     private readonly LeaderboardObserver _leaderboard = new();
     private readonly GameEventLoggerObserver _logger = new();
     private readonly ExternalAudioEngine _audioEngine = new();
@@ -58,9 +58,9 @@ public class GameManager
         _soundService = new SoundEffectAdapter(_audioEngine, (soundFile, vol) => OnSoundEffectPlayed?.Invoke(soundFile, vol));
         _audioObserver = new AudioObserver(_soundService);
 
-        _Match.Attach(_leaderboard);
-        _Match.Attach(_logger);
-        _Match.Attach(_audioObserver);
+        _match.Attach(_leaderboard);
+        _match.Attach(_logger);
+        _match.Attach(_audioObserver);
     }
 
     public void SetSoundVolume(float volume) => _soundService.SetVolume(volume);
@@ -78,7 +78,7 @@ public class GameManager
             _soundService.PlaySound(SoundEffectType.LobbyJoin);
 
             var player = _players.RegisterPlayer(connectionId, name, null);
-            int[]? startPos = _Match.AddPlayer(player);
+            int[]? startPos = _match.AddPlayer(player);
             if (startPos != null)
             {
                 player.X = startPos[0];
@@ -93,8 +93,8 @@ public class GameManager
     {
         lock (_lock)
         {
-            _Match.GenerateMap();
-            _Match.GetMapStringFormat();
+            _match.GenerateMap();
+            _match.GetMapStringFormat();
         }
     }
 
@@ -103,7 +103,7 @@ public class GameManager
         lock (_lock)
         {
             _lobby.RemovePlayer(connectionId);
-            _Match.RemovePlayer(connectionId);
+            _match.RemovePlayer(connectionId);
             _cheats.RemovePlayer(connectionId);
             bool removed = _players.TryRemovePlayer(connectionId, out player);
 
@@ -187,8 +187,8 @@ public class GameManager
         }
 
         _cheats.Clear();
-        _Match.ResetForNewRound(_round.SelectedMapType);
-        _Match.NotifyRoundStarted(_round.CurrentRound, _round.SelectedMapType);
+        _match.ResetForNewRound(_round.SelectedMapType);
+        _match.NotifyRoundStarted(_round.CurrentRound, _round.SelectedMapType);
     }
 
     public void ReturnToLobby()
@@ -205,7 +205,7 @@ public class GameManager
     {
         lock (_lock)
         {
-            return _gameState.BuildFullMapJson(_Match, _round, _lobby, _leaderboard, _cheats);
+            return _gameState.BuildFullMapJson(_match, _round, _lobby, _leaderboard, _cheats);
         }
     }
 
@@ -215,7 +215,7 @@ public class GameManager
         {
             if (_round.Stage == GameStage.InGame && _players.TryGetAlivePlayer(connectionId, out _))
             {
-                _Match.MovePlayer(dx, dy, connectionId);
+                _match.MovePlayer(dx, dy, connectionId);
             }
         }
     }
@@ -227,11 +227,11 @@ public class GameManager
             if (_round.Stage == GameStage.InGame)
             {
                 _round.TickTimer(deltaTime);
-                _Match.Update(deltaTime);
+                _match.Update(deltaTime);
 
-                if (_round.TryConcludeRound(_Match.GetAlivePlayers(), out var winner))
+                if (_round.TryConcludeRound(_match.GetAlivePlayers(), out var winner))
                 {
-                    _Match.NotifyRoundEnded(winner, _round.CurrentRound, _round.TotalRounds);
+                    _match.NotifyRoundEnded(winner, _round.CurrentRound, _round.TotalRounds);
                 }
             }
             else if (_round.Stage == GameStage.RoundEnd)
@@ -241,15 +241,15 @@ public class GameManager
                     if (startNextRound)
                     {
                         _cheats.Clear();
-                        _Match.ResetForNewRound(_round.SelectedMapType, useSameMap);
-                        _Match.NotifyRoundStarted(_round.CurrentRound, _round.SelectedMapType);
+                        _match.ResetForNewRound(_round.SelectedMapType, useSameMap);
+                        _match.NotifyRoundStarted(_round.CurrentRound, _round.SelectedMapType);
                     }
                     else
                     {
                         var standings = _leaderboard.GetStandings();
                         var topPlayer = standings.FirstOrDefault();
                         _round.SetChampion(topPlayer?.PlayerName);
-                        _Match.NotifyMatchEnded(_players.GetPlayerOrDefault(topPlayer?.PlayerId), standings);
+                        _match.NotifyMatchEnded(_players.GetPlayerOrDefault(topPlayer?.PlayerId), standings);
                     }
                 }
             }
@@ -266,7 +266,7 @@ public class GameManager
             if (_round.Stage == GameStage.InGame && _players.TryGetAlivePlayer(connectionId, out var player))
             {
                 var strategy = _players.ResolveBombStrategy(player!, strategyName);
-                _Match.PlaceBomb(player!, strategy);
+                _match.PlaceBomb(player!, strategy);
             }
         }
     }
@@ -293,7 +293,7 @@ public class GameManager
     {
         lock (_lock)
         {
-            return _Match.GetAllItems();
+            return _match.GetAllItems();
         }
     }
 
@@ -303,7 +303,7 @@ public class GameManager
         {
             if (_round.Stage == GameStage.InGame && _players.TryGetAlivePlayer(connectionId, out var player))
             {
-                _Match.UseWeapon(player!);
+                _match.UseWeapon(player!);
             }
         }
     }

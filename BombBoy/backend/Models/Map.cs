@@ -1,21 +1,16 @@
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.SignalR;
-using BombBoy.Models;
 using BombBoy.Models.Tiles;
 using System;
-using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
-
 
 namespace BombBoy.Models;
 
 public class Map : IPrototype<Map>
 {
-    private int Size_X {  get; set; }
+    private int Size_X { get; set; }
 
     private int Size_Y { get; set; }
 
-    private BasicTile[,] MapTileGrid;
+    private BasicTile[,] MapTileGrid = null!;
 
     public string? CurrentBlastOwnerId { get; set; }
     public string CurrentBlastEmoji { get; set; } = "💥";
@@ -57,13 +52,10 @@ public class Map : IPrototype<Map>
         //stackas jei apdorosim rejoininima, jei ne galime tsg masyva turet
         
         generateMapGood(BlockSpawnChance, WaterSpawnChance, HavePillars);
-        //GenerateMapSimple();
     }
 
     private void generateMapGood(int BlockSpawnChance, int WaterSpawnChance, bool HavePillars)
     {
-        //Console.WriteLine("Generuoju mapa!");
-
         Random rand = new Random();
         MapTileGrid = new BasicTile[Size_X, Size_Y];
         for (int i = 0; i < Size_X; i++)
@@ -148,12 +140,10 @@ public class Map : IPrototype<Map>
         {
             for (int j = 0; j < Size_Y; j++)
             {
-               //Console.WriteLine($"i == {i} j == {j} Type == {MapGrid[i, j].Type}");
                result += MapTileGrid[i, j].ToString();
             }
             result += "\n";
         }
-        //Console.WriteLine(result);
         return result;
     }
 

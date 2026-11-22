@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.SignalR;
 using BombBoy.Services;
-using System.Threading.Tasks;
 
 public class AppHub : Hub
 {

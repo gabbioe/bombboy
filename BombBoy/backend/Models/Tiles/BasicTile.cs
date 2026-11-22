@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Reflection.Metadata.Ecma335;
-using System.Text;
-
-namespace BombBoy.Models.Tiles
+﻿namespace BombBoy.Models.Tiles
 {
     public class BasicTile
     {
@@ -40,7 +35,7 @@ namespace BombBoy.Models.Tiles
         }
 
         //!!!!!!!!!!! Sita butinai reikia turet implementuota, jis naudojamas kad perduot mapo informacija klientui
-        public virtual string? ToString()
+        public override string ToString()
         {
             return _jsonFormating;
         }

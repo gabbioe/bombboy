@@ -1,3 +1,5 @@
+using System;
+
 namespace BombBoy.Models.Decorator;
 
 public class WallPassDecorator : PlayerDecorator
@@ -29,7 +31,7 @@ public class WallPassDecorator : PlayerDecorator
     public override string GetStatusDescription()
     {
         return _active
-            ? $"{_wrapped.GetStatusDescription()} + WallPass({(int)System.Math.Ceiling(_duration)}s)"
+            ? $"{_wrapped.GetStatusDescription()} + WallPass({(int)Math.Ceiling(_duration)}s)"
             : _wrapped.GetStatusDescription();
     }
 }

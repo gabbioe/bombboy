@@ -1,3 +1,5 @@
+using System;
+
 namespace BombBoy.Models.Decorator;
 
 public class SpeedDecorator : PlayerDecorator
@@ -31,7 +33,7 @@ public class SpeedDecorator : PlayerDecorator
     public override string GetStatusDescription()
     {
         return _active
-            ? $"{_wrapped.GetStatusDescription()} + Speed({_bonus}, {(int)System.Math.Ceiling(_duration)}s)"
+            ? $"{_wrapped.GetStatusDescription()} + Speed({_bonus}, {(int)Math.Ceiling(_duration)}s)"
             : _wrapped.GetStatusDescription();
     }
 }

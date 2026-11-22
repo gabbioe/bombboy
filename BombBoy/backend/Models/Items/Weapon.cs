@@ -1,6 +1,5 @@
 using BombBoy.Models;
 using BombBoy.Models.Bridge;
-using BombBoy.Models.Tiles;
 
 namespace BombBoy.Models.Items
 {
@@ -21,7 +20,7 @@ namespace BombBoy.Models.Items
             Y = y;
             MaxUses = maxUses;
             UsesCount = maxUses;
-            ID = new Random().Next(1000, 9999);
+            ID = Random.Shared.Next(1000, 9999);
             Effect = effect ?? new FireExplosiveEffect();
         }
 

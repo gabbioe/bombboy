@@ -3,28 +3,27 @@ using BombBoy.Models.GridEntities;
 using BombBoy.Models.Items;
 using BombBoy.Models.Strategies;
 using System;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 
 namespace BombBoy.Models;
 
 public class Player
 {
-    public string Id{get;set;} = string.Empty;
-    public string Name{get;set;} = "Player";
-    public int X{get;set;} = 0;
-    public int Y {get;set;} = 0;
+    public string Id { get; set; } = string.Empty;
+    public string Name { get; set; } = "Player";
+    public int X { get; set; } = 0;
+    public int Y { get; set; } = 0;
 
     public int DeathCount { get; set; } = 0;
     public int KillCount { get; set; } = 0;
 
-    public string Colour { get; set; }
+    public string Colour { get; set; } = string.Empty;
 
     public string Direction = "Down";
-    public bool IsAlive{get;set;} = true;
-    public int BombCount{get;set;} = 1;
+    public bool IsAlive { get; set; } = true;
+    public int BombCount { get; set; } = 1;
 
-    public int BombRange { get; set; } = 1; // buvo = 2
+    public int BombRange { get; set; } = 1;
     public int Lives { get; set; } = 1;
 
     public Weapon? CurrentWeapon { get; set; } = null;
@@ -73,7 +72,7 @@ public class Player
     public int SpeedBonus => Component.SpeedBonus;
 
     //reikalingas tarp match, galvoju sita padaryti matcho player klase, game manager atskira turetu turet
-    public int StartingLocation { get;set;}
+    public int StartingLocation { get; set; }
 
     public JsonObject GetPossitionAndDirectionJson()
     {
