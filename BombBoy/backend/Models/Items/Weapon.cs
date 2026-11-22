@@ -1,6 +1,7 @@
 using BombBoy.Models;
 using BombBoy.Models.Bridge;
 using BombBoy.Models.Tiles;
+using BombBoy.Models.Visitor;
 
 namespace BombBoy.Models.Items
 {
@@ -145,6 +146,8 @@ namespace BombBoy.Models.Items
         {
             // logic to remove from map
         }
+
+        public void Accept(IMatchVisitor visitor) => visitor.VisitItem(this);
     }
 
     // 1. Concrete sealed long-range fire laser weapon (6 tiles)

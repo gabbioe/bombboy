@@ -1,5 +1,6 @@
 namespace BombBoy.Models.GridEntities;
 
+using BombBoy.Models.Flyweight;
 using BombBoy.Models.Strategies;
 
 public class Bomb : Entity
@@ -20,7 +21,7 @@ public class Bomb : Entity
         X = x;
         Y = y;
         Range = range;
-        Strategy = strategy ?? new ClassicCrossExplosionStrategy();
+        Strategy = strategy ?? ExplosionStrategyFlyweightFactory.GetStrategy("classic");
         OwnerId = ownerId;
         BlastEmoji = blastEmoji;
     }

@@ -1,6 +1,7 @@
 using Bombboy.Models.MapBuilders;
 using Bombboy.Models.Tiles;
 using BombBoy.Models.Bridge;
+using BombBoy.Models.Flyweight;
 using BombBoy.Models.GridEntities;
 using BombBoy.Models.ItemFactories;
 using BombBoy.Models.Items;
@@ -8,6 +9,7 @@ using BombBoy.Models.Tiles;
 using BombBoy.Models.Observer;
 using BombBoy.Models.State;
 using BombBoy.Models.Strategies;
+using BombBoy.Models.Visitor;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,7 +18,7 @@ using System.Text.Json.Nodes;
 
 namespace BombBoy.Models
 {
-    public class Match : IGameEventSubject
+    public class Match : IGameEventSubject, IMatchVisitable
     {
         private readonly List<IGameEventObserver> _observers = new();
 
@@ -344,7 +346,7 @@ namespace BombBoy.Models
             if (ActiveBombs.Any(b => b.X == player.X && b.Y == player.Y))
                 return false;
 
-            var strategy = customStrategy ?? player.ActiveBombStrategy ?? new ClassicCrossExplosionStrategy();
+            var strategy = customStrategy ?? player.ActiveBombStrategy ?? ExplosionStrategyFlyweightFactory.GetStrategy("classic");
             player.ActiveBombStrategy = strategy;
             var bomb = new Bomb(player.X, player.Y, player.BombRange, strategy, player.Id);
             ActiveBombs.Add(bomb);
@@ -461,7 +463,9 @@ namespace BombBoy.Models
                 
         public List<ItemDto> GetAllItems()
         {
-            return _items.Select(i => new ItemDto(i.X, i.Y, i.GetEmoji())).ToList();
+            var statsVisitor = new MatchStatisticsVisitor();
+            Accept(statsVisitor);
+            return statsVisitor.ItemDtos;
         }
 
         /// <summary>
@@ -513,62 +517,36 @@ namespace BombBoy.Models
             player.CurrentWeapon?.Use(player, this, GameMap);
         }
 
-        //returns two jsons in one (first Bottom layer(tiles), then Top Layer(entities))
-        public string GetFullGameMapJson(bool ToConsole = false)
+        public void Accept(IMatchVisitor visitor)
         {
-            var CombinedJson = new JsonObject
-            {
-                ["MapLayer"] = JsonNode.Parse(GameMap.ReturnMapToJSon()),
-                ["EntityLayer"] = JsonNode.Parse(GetEntityJson()),
-                ["PlayerLayer"] = JsonNode.Parse(GetPlayerJson()),
-                ["AllPlayersDead"] = AreAllPlayersDead(),
-                ["PlayerCount"] = Players.Count
-            };
+            GameMap.Accept(visitor);
 
-            var options = new JsonSerializerOptions { WriteIndented = ToConsole };
-            return CombinedJson.ToJsonString(options);
-        }
-
-        //generates the Top Layer(entities & items)
-        private string GetEntityJson()
-        {
-            var entityDict = new JsonObject();
-
-            foreach (var e in Entities) // bombs and blasts
+            foreach (var e in Entities)
             {
                 if (e.Value.Count > 0)
                 {
-                    // just in case kitur nesortinta
                     e.Value.Sort();
-                    //kad sutiktu su mapo lokacijomis
-                    entityDict[$"{e.Key.x},{e.Key.y}"] = e.Value[0].ToString();
+                    visitor.VisitEntitySlot(e.Key.x, e.Key.y, e.Value[0]);
                 }
             }
 
-            // add items to the entity layer
             foreach (var item in _items)
             {
-                entityDict[$"{item.X},{item.Y}"] = item.GetEmoji();
+                item.Accept(visitor);
             }
 
-            return JsonSerializer.Serialize(entityDict);
+            foreach (var p in Players.Values)
+            {
+                p.Accept(visitor);
+            }
         }
 
-        private string GetPlayerJson()
+        //returns two jsons in one (first Bottom layer(tiles), then Top Layer(entities))
+        public string GetFullGameMapJson(bool ToConsole = false)
         {
-            List<JsonObject> EntityJsonArray = new List<JsonObject>();
-            foreach (var p in Players)
-            {
-                if (!p.Value.IsAlive) continue;
-
-                var entry = new JsonObject
-                {
-                    //kad sutiktu su mapo lokacijomis
-                    [$"{p.Value.X},{p.Value.Y}"] = p.Value.GetPossitionAndDirectionJson(),
-                };
-                EntityJsonArray.Add(entry);
-            }
-            return JsonSerializer.Serialize(EntityJsonArray);
+            var visitor = new JsonMatchRenderVisitor();
+            Accept(visitor);
+            return visitor.BuildCombinedJson(AreAllPlayersDead(), Players.Count, ToConsole);
         }
 
         private void SubscribeMapevents(Map map)

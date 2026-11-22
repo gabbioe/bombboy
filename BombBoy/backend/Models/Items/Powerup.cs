@@ -1,5 +1,6 @@
 using BombBoy.Models;
 using BombBoy.Models.Decorator;
+using BombBoy.Models.Visitor;
 
 namespace BombBoy.Models.Items
 {
@@ -30,6 +31,8 @@ namespace BombBoy.Models.Items
         {
             // logic to remove item hit by blast radius or weapon from map (handled by Match)
         }
+
+        public void Accept(IMatchVisitor visitor) => visitor.VisitItem(this);
     }
 
     public class StatPowerup : Powerup

@@ -1,7 +1,9 @@
 ﻿using BombBoy.Models; // for Player and Match
+using BombBoy.Models.Visitor;
+
 namespace BombBoy.Models.Items
 {
-    public interface IItem
+    public interface IItem : IMatchVisitable
     {
         int X { get; set; }
         int Y { get; set; }

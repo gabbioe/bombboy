@@ -1,5 +1,6 @@
 using BombBoy.Models;
 using BombBoy.Models.Observer;
+using BombBoy.Models.Visitor;
 using System;
 using System.Text.Json.Nodes;
 
@@ -36,6 +37,10 @@ public sealed class GameStateService
         root["Champion"] = round.ChampionName;
         root["SameMapVotes"] = round.SameMapVotesCount;
         root["SameMapVotesNeeded"] = round.GetSameMapVotesNeeded(lobby.PlayerCount);
+
+        var statsVisitor = new MatchStatisticsVisitor();
+        match.Accept(statsVisitor);
+        root["BoardStats"] = statsVisitor.ToJsonObject();
 
         var activeCheatsObj = new JsonObject();
         foreach (var kvp in cheats.GetActiveCheats())

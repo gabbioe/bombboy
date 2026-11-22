@@ -1,4 +1,5 @@
 using BombBoy.Models;
+using BombBoy.Models.Flyweight;
 using BombBoy.Models.Strategies;
 using System;
 using System.Collections.Concurrent;
@@ -62,16 +63,6 @@ public sealed class PlayerService
             ? ResolveStrategy(strategyName)
             : player.ActiveBombStrategy;
 
-    public static IExplosionStrategy ResolveStrategy(string? strategyName)
-    {
-        if (string.IsNullOrWhiteSpace(strategyName))
-            return new ClassicCrossExplosionStrategy();
-
-        string norm = strategyName.Trim().ToLowerInvariant();
-        if (norm.Contains("diag") || norm == "2") return new DiagonalExplosionStrategy();
-        if (norm.Contains("area") || norm.Contains("box") || norm == "3") return new AreaBoxExplosionStrategy();
-        if (norm.Contains("pierc") || norm == "4") return new PiercingLineExplosionStrategy();
-        if (norm.Contains("flood") || norm == "5") return new FloodFillExplosionStrategy();
-        return new ClassicCrossExplosionStrategy();
-    }
+    public static IExplosionStrategy ResolveStrategy(string? strategyName) =>
+        ExplosionStrategyFlyweightFactory.GetStrategy(strategyName);
 }
