@@ -463,15 +463,6 @@ namespace BombBoy.Models
         /// <param name="Emoji"></param>
         public record ItemDto(int X, int Y, string Emoji);
 
-        private static (int dx, int dy) GetDirectionOffset(string direction) => direction switch
-        {
-            "Up" => (0, -1),
-            "Down" => (0, 1),
-            "Right" => (1, 0),
-            "Left" => (-1, 0),
-            _ => (0, 0)
-        };
-
         private void AddEntityToGrid(int x, int y, Entity entity)
         {
             if (!Entities.TryGetValue((x, y), out var list))
@@ -492,72 +483,25 @@ namespace BombBoy.Models
             }
         }
 
-        // weapon usage logic
+        public bool TrySpawnThrownBomb(Player player, int tx, int ty)
+        {
+            bool tileIsClear = GameMap.IsValidCoord(tx, ty)
+                && GameMap.CheckIfCanMove(tx, ty)
+                && !ActiveBombs.Any(b => b.X == tx && b.Y == ty);
+
+            if (!tileIsClear)
+                return false;
+
+            var bomb = new Bomb(tx, ty, player.BombRange, player.ActiveBombStrategy, player.Id);
+            ActiveBombs.Add(bomb);
+            AddEntityToGrid(tx, ty, bomb);
+            return true;
+        }
+
+        // weapon usage logic (delegates to Weapon Template Method)
         public void UseWeapon(Player player)
         {
-            if (player.CurrentWeapon == null) return;
-
-            var weapon = player.CurrentWeapon;
-            NotifyWeaponUsed(player, weapon.GetType().Name);
-            weapon.Use(player); // decrements uses internally
-
-            var (dx, dy) = GetDirectionOffset(player.Direction);
-
-            if (weapon is Knife || weapon is Popsicle)
-            {
-                // logic for knife
-                int targetX = player.X + dx;
-                int targetY = player.Y + dy;
-                // Delegate to Bridge Implementor (spawns 💥 for Knife, ❄️ for Popsicle, damages players & blocks)
-                weapon.Effect.Apply(player, GameMap, targetX, targetY);
-            }
-            else if (weapon is LaserGun || weapon is FrozenLaserGun)
-            {
-                // logic for laser gun
-                int cx = player.X + dx;
-                int cy = player.Y + dy;
-                int range = 0;
-                int maxRange = (weapon is FrozenLaserGun) ? 3 : 6; // Frozen has half range
-
-                GameMap.CurrentBlastOwnerId = player.Id;
-                while (GameMap.IsValidCoord(cx, cy) && range < maxRange)
-                {
-                    var tile = GameMap.GetTile(cx, cy);
-                    if (tile == null || tile.Type == "IndestructableTile") break;
-
-                    weapon.Effect.Apply(player, GameMap, cx, cy);
-                    if (tile is DestructableTile) break;
-
-                    cx += dx;
-                    cy += dy;
-                    range++;
-                }
-                GameMap.CurrentBlastOwnerId = null;
-            }
-            else if (weapon is ThrowableWeapon || weapon is SnowballWeapon)
-            {
-                // logic for throwable weapon
-                // target 2 blocks away
-                int tx = player.X + (dx * 2);
-                int ty = player.Y + (dy * 2);
-
-                bool tileIsClear = GameMap.IsValidCoord(tx, ty)
-                   && GameMap.CheckIfCanMove(tx, ty)  // not a wall or breakable block
-                   && !ActiveBombs.Any(b => b.X == tx && b.Y == ty);
-
-                if (tileIsClear)
-                {
-                    // spawn a bomb there owned by the player
-                    var bomb = new Bomb(tx, ty, player.BombRange, player.ActiveBombStrategy, player.Id);
-                    ActiveBombs.Add(bomb);
-                    AddEntityToGrid(tx, ty, bomb);
-                }
-            }
-            // remove weapon if out of uses
-            if (player.CurrentWeapon.UsesCount <= 0)
-            {
-                player.CurrentWeapon = null;
-            }
+            player.CurrentWeapon?.Use(player, this, GameMap);
         }
 
         //returns two jsons in one (first Bottom layer(tiles), then Top Layer(entities))
