@@ -1,10 +1,12 @@
 using Bombboy.Models.MapBuilders;
 using Bombboy.Models.Tiles;
+using BombBoy.Models.Bridge;
 using BombBoy.Models.GridEntities;
 using BombBoy.Models.ItemFactories;
 using BombBoy.Models.Items;
 using BombBoy.Models.Tiles;
 using BombBoy.Models.Observer;
+using BombBoy.Models.State;
 using BombBoy.Models.Strategies;
 using System;
 using System.Collections.Generic;
@@ -123,6 +125,27 @@ namespace BombBoy.Models
             return died;
         }
 
+        public void ApplyBlastEffect(Player victim, Blast blast)
+        {
+            if (!victim.IsAlive) return;
+
+            Player? attacker = null;
+            if (!string.IsNullOrEmpty(blast.OwnerId))
+            {
+                Players.TryGetValue(blast.OwnerId, out attacker);
+            }
+
+            if (blast.IsFrost)
+            {
+                FrostFreezeEffect.ApplyFreezeToPlayer(victim);
+                NotifyPlayerDamaged(victim, attacker);
+            }
+            else
+            {
+                ApplyDamage(victim, attacker);
+            }
+        }
+
         public string GetMapStringFormat()
         {
             return GameMap.ReturnMapToConsole();
@@ -160,6 +183,9 @@ namespace BombBoy.Models
             
             if (Players.TryGetValue(PlayerId, out var player))
             {
+                if (!player.CanMove)
+                    return false;
+
                 if (Math.Abs(dx) + Math.Abs(dy) < 2)
                 {
                     int x = Players[PlayerId].X;
@@ -173,12 +199,7 @@ namespace BombBoy.Models
                         var blast = ActiveBlasts.FirstOrDefault(b => b.X == player.X && b.Y == player.Y);
                         if (blast != null)
                         {
-                            Player? killer = null;
-                            if (!string.IsNullOrEmpty(blast.OwnerId))
-                            {
-                                Players.TryGetValue(blast.OwnerId, out killer);
-                            }
-                            ApplyDamage(player, killer);
+                            ApplyBlastEffect(player, blast);
                         }
                         switch (dx, dy)
                         {
@@ -190,8 +211,8 @@ namespace BombBoy.Models
                         // check for item pickup
                         CheckPickups(player);
 
-                        // SpeedDecorator effect: move an additional step if speed bonus is active and next tile is clear
-                        if (player.IsAlive && player.SpeedBonus > 0)
+                        // SpeedDecorator effect: move an additional step if speed bonus is active, player state permits, and next tile is clear
+                        if (player.IsAlive && player.CanMove && player.State.AllowsSpeedBonus && player.SpeedBonus > 0)
                         {
                             int nx = player.X + dx;
                             int ny = player.Y + dy;
@@ -252,6 +273,7 @@ namespace BombBoy.Models
                 p.ShieldDuration = 0;
                 p.CanPassThroughWalls = false; // cheat
                 p.ResetDecorators();
+                p.TransitionToState(new HealthyState());
                 p.CurrentWeapon = null;
                 p.BombCount = 1;
                 p.BombRange = 1;
@@ -313,6 +335,9 @@ namespace BombBoy.Models
 
         public bool PlaceBomb(Player player, IExplosionStrategy? customStrategy = null)
         {
+            if (!player.CanAct)
+                return false;
+
             int playerCurrentBombs = ActiveBombs.Count(b => b.OwnerId == player.Id);
             if (playerCurrentBombs >= player.BombCount)
                 return false;
@@ -346,27 +371,11 @@ namespace BombBoy.Models
         // Called every game tick
         public void Update(float deltaTime)
         {
-            // update shields (tbh idk ar prieš ar po active bombs tickerių dėti logiką)
+            // update shields and player condition states
             foreach (var player in Players.Values)
             {
                 player.UpdateDecorators(deltaTime);
-                if (player.IsAlive && GameMap.GetTile(player.X, player.Y) is WaterTile waterTile)
-                {
-                    if (waterTile.CanDrown())
-                    {
-                        NotifyPlayerDrowned(player);
-                        player.Lives = 0;
-                        player.IsAlive = false;
-                        NotifyPlayerDied(player, null);
-                    }
-                }
-                if(player.IsAlive && !player.CanPassThroughWalls && !GameMap.CheckIfCanMove(player.X, player.Y))
-                {
-                    player.HasShield = false;
-                    player.Lives = 0;
-                    player.IsAlive = false;
-                    NotifyPlayerDied(player, null);
-                }
+                player.UpdateState(this, GameMap, deltaTime);
             }            
             //update bombs
             for (int i = ActiveBombs.Count - 1; i >= 0; i--)
@@ -483,7 +492,7 @@ namespace BombBoy.Models
             }
         }
 
-        public bool TrySpawnThrownBomb(Player player, int tx, int ty)
+        public bool TrySpawnThrownBomb(Player player, int tx, int ty, string blastEmoji = "💥")
         {
             bool tileIsClear = GameMap.IsValidCoord(tx, ty)
                 && GameMap.CheckIfCanMove(tx, ty)
@@ -492,7 +501,7 @@ namespace BombBoy.Models
             if (!tileIsClear)
                 return false;
 
-            var bomb = new Bomb(tx, ty, player.BombRange, player.ActiveBombStrategy, player.Id);
+            var bomb = new Bomb(tx, ty, player.BombRange, player.ActiveBombStrategy, player.Id, blastEmoji);
             ActiveBombs.Add(bomb);
             AddEntityToGrid(tx, ty, bomb);
             return true;
@@ -578,12 +587,7 @@ namespace BombBoy.Models
                 {
                     if (p.IsAlive && p.X == bx && p.Y == by)
                     {
-                        Player? killer = null;
-                        if (!string.IsNullOrEmpty(blast.OwnerId))
-                        {
-                            Players.TryGetValue(blast.OwnerId, out killer);
-                        }
-                        ApplyDamage(p, killer);
+                        ApplyBlastEffect(p, blast);
                     }
                 }
 

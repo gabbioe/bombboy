@@ -55,7 +55,7 @@ namespace BombBoy.Models.Items
         }
 
         // Hook: subclasses may override precondition checks (e.g. cooldowns)
-        protected virtual bool CanUse(Player player) => player.IsAlive && UsesCount > 0;
+        protected virtual bool CanUse(Player player) => player.IsAlive && player.CanAct && UsesCount > 0;
 
         // Invariant step: decrement remaining charges
         private void ConsumeUse() => UsesCount--;
@@ -133,11 +133,11 @@ namespace BombBoy.Models.Items
             }
         }
 
-        protected static void SpawnThrownBombs(Player player, Match match, List<(int x, int y)> targetTiles)
+        protected void SpawnThrownBombs(Player player, Match match, List<(int x, int y)> targetTiles)
         {
             foreach (var (x, y) in targetTiles)
             {
-                match.TrySpawnThrownBomb(player, x, y);
+                match.TrySpawnThrownBomb(player, x, y, Effect.VisualEmoji);
             }
         }
 

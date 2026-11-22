@@ -9,11 +9,12 @@ public class Bomb : Entity
     public int Range { get; set; }
     public float Timer { get; set; } = 3.0f; // 3 seconds until detonation
     public string OwnerId { get; set; }
+    public string BlastEmoji { get; set; } = "💥";
 
     // Strategy Pattern Context
     public IExplosionStrategy Strategy { get; set; }
 
-    public Bomb(int x, int y, int range, IExplosionStrategy strategy, string ownerId) 
+    public Bomb(int x, int y, int range, IExplosionStrategy strategy, string ownerId, string blastEmoji = "💥") 
         : base(layer: 1, type: "💣")
     {
         X = x;
@@ -21,6 +22,7 @@ public class Bomb : Entity
         Range = range;
         Strategy = strategy ?? new ClassicCrossExplosionStrategy();
         OwnerId = ownerId;
+        BlastEmoji = blastEmoji;
     }
 
     public override bool CanWalk() => false; // Blocks player walking
@@ -41,8 +43,10 @@ public class Bomb : Entity
     public void Detonate(Map map)
     {
         map.CurrentBlastOwnerId = OwnerId;
+        map.CurrentBlastEmoji = BlastEmoji;
         // Delegate explosion to the strategy
         Strategy.Explode(map, X, Y, Range);
+        map.CurrentBlastEmoji = "💥";
         map.CurrentBlastOwnerId = null;
     }
 }

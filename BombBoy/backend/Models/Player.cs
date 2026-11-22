@@ -1,6 +1,7 @@
 using BombBoy.Models.Decorator;
 using BombBoy.Models.GridEntities;
 using BombBoy.Models.Items;
+using BombBoy.Models.State;
 using BombBoy.Models.Strategies;
 using System;
 using System.Text.Json.Nodes;
@@ -28,6 +29,17 @@ public class Player
 
     public Weapon? CurrentWeapon { get; set; } = null;
 
+    // State Pattern Context for player physical condition (Healthy, Frozen, Drowning, DeadGhost)
+    public IPlayerState State { get; private set; } = new HealthyState();
+
+    public void TransitionToState(IPlayerState newState)
+    {
+        State = newState ?? throw new ArgumentNullException(nameof(newState));
+    }
+
+    public bool CanMove => State.CanMove(this);
+    public bool CanAct => State.CanAct(this);
+
     // Decorator Component for power-ups (Speed, WallPass, Immortal/Shield)
     public IPlayerComponent Component { get; private set; } = new BasicPlayerComponent();
 
@@ -42,6 +54,7 @@ public class Player
     {
         Component = new BasicPlayerComponent();
         _manualNoclip = false;
+        State = new HealthyState();
     }
 
     public bool HasShield
@@ -88,7 +101,9 @@ public class Player
             ["WeaponEmoji"] = CurrentWeapon?.GetEmoji() ?? "",
             ["WeaponUses"] = CurrentWeapon?.UsesCount ?? 0,
             ["BombCount"] = BombCount,
-            ["BombRange"] = BombRange
+            ["BombRange"] = BombRange,
+            ["State"] = State.StateName,
+            ["StateEmoji"] = State.StatusEmoji
         };
     }
 
@@ -103,12 +118,22 @@ public class Player
     }
 
     /// <summary>
-    /// Applies damage to this player. Handles shield, lives, and death.
+    /// Applies damage to this player through the current IPlayerState.
     /// Returns true if the player died (lives reached 0).
     /// </summary>
     public bool TakeDamage()
     {
-        return Component.TakeDamage(this);
+        return State.HandleDamage(this);
+    }
+
+    public void ApplyFrost(float duration = 2.0f)
+    {
+        State.HandleFrostHit(this, duration);
+    }
+
+    public void UpdateState(Match match, Map map, float deltaTime)
+    {
+        State.Update(this, match, map, deltaTime);
     }
 
     public void UpdateDecorators(float deltaTime)

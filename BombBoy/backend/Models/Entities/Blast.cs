@@ -6,6 +6,7 @@ public class Blast : Entity
     public int X { get; set; }
     public int Y { get; set; }
     public string? OwnerId { get; set; }
+    public bool IsFrost => ToString() == "❄️";
 
     public Blast(int x, int y, float duration = 0.5f, string? ownerId = null, string type = "💥") : base(layer: 0, type: type)
     {
