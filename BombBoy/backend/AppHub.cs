@@ -1,11 +1,12 @@
 using Microsoft.AspNetCore.SignalR;
 using BombBoy.Services;
+using BombBoy.Services.Proxy;
 
 public class AppHub : Hub
 {
-    private readonly GameManager _gameManager;
+    private readonly IGameManager _gameManager;
 
-    public AppHub(GameManager gameManager)
+    public AppHub(IGameManager gameManager)
     {
         _gameManager = gameManager;
     }

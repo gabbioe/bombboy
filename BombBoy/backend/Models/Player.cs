@@ -1,15 +1,17 @@
 using BombBoy.Models.Decorator;
+using BombBoy.Models.Flyweight;
 using BombBoy.Models.GridEntities;
 using BombBoy.Models.Items;
 using BombBoy.Models.Memento;
 using BombBoy.Models.State;
 using BombBoy.Models.Strategies;
+using BombBoy.Models.Visitor;
 using System;
 using System.Text.Json.Nodes;
 
 namespace BombBoy.Models;
 
-public class Player
+public class Player : IMatchVisitable
 {
     public string Id { get; set; } = string.Empty;
     public string Name { get; set; } = "Player";
@@ -108,7 +110,9 @@ public class Player
         };
     }
 
-    public IExplosionStrategy ActiveBombStrategy { get; set; } = new ClassicCrossExplosionStrategy();
+    public IExplosionStrategy ActiveBombStrategy { get; set; } = ExplosionStrategyFlyweightFactory.GetStrategy("classic");
+
+    public void Accept(IMatchVisitor visitor) => visitor.VisitPlayer(this);
     public Bomb PlantBomb(int x, int y)
     {
         return new Bomb(x, y, BombRange, ActiveBombStrategy, Id);

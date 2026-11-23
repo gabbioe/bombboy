@@ -1,10 +1,11 @@
 using BombBoy.Models.Tiles;
+using BombBoy.Models.Visitor;
 using System;
 using System.Text.Json;
 
 namespace BombBoy.Models;
 
-public class Map : IPrototype<Map>
+public class Map : IPrototype<Map>, IMatchVisitable
 {
     private int Size_X { get; set; }
 
@@ -131,38 +132,20 @@ public class Map : IPrototype<Map>
     }
 
 
-    //TODO (gal) padaryti kad gerai printintui klientui
+    public void Accept(IMatchVisitor visitor) => visitor.VisitMap(this);
+
     public string ReturnMapToConsole()
     {
-        string result = string.Empty;
-
-        for (int i = 0; i < Size_X; i++)
-        {
-            for (int j = 0; j < Size_Y; j++)
-            {
-               result += MapTileGrid[i, j].ToString();
-            }
-            result += "\n";
-        }
-        return result;
+        var visitor = new ConsoleMapRenderVisitor();
+        Accept(visitor);
+        return visitor.Result;
     }
-
 
     public string ReturnMapToJSon()
     {
-        // Create a jagged array matching your grid dimensions
-        var gridArray = new string[Size_X][];
-
-        for (int i = 0; i < Size_X; i++)
-        {
-            gridArray[i] = new string[Size_Y];
-            for (int j = 0; j < Size_Y; j++)
-            {
-                gridArray[i][j] = MapTileGrid[i, j].ToString();
-            }
-        }
-        // Serialize to a JSON string
-        return JsonSerializer.Serialize(gridArray);
+        var visitor = new JsonMatchRenderVisitor();
+        Accept(visitor);
+        return visitor.GetMapLayerJson();
     }
 
     public int GetX()

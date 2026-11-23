@@ -1,13 +1,14 @@
 using Microsoft.AspNetCore.SignalR;
+using BombBoy.Services.Proxy;
 
 namespace BombBoy.Services;
 
 public class GameLoopService : BackgroundService
 {
-    private readonly GameManager _gameManager;
+    private readonly IGameManager _gameManager;
     private readonly IHubContext<AppHub> _hubContext;
 
-    public GameLoopService(GameManager gameManager, IHubContext<AppHub> hubContext)
+    public GameLoopService(IGameManager gameManager, IHubContext<AppHub> hubContext)
     {
         _gameManager = gameManager;
         _hubContext = hubContext;
