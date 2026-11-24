@@ -6,8 +6,8 @@ using System.Text.Json.Nodes;
 namespace BombBoy.Models.Visitor;
 
 /// <summary>
-/// Concrete Visitor that traverses Match elements (Map, Entity slots, Items, and Players)
-/// to assemble the JSON representation for SignalR clients.
+/// visitor perziuri mapa, players, items ir entity slotus
+/// sukuria JSON del signalR
 /// </summary>
 public sealed class JsonMatchRenderVisitor : IMatchVisitor
 {

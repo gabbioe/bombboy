@@ -8,8 +8,8 @@ using System.Text.Json.Nodes;
 namespace BombBoy.Models.Visitor;
 
 /// <summary>
-/// Concrete Visitor 3: Traverses the Match object graph (Map, Entity slots, Items, and Players)
-/// to aggregate live board statistics and extract item DTOs without coupling analytics to domain models.
+/// sitas visitor pereina items, players, entity slots, map
+/// ir sukuria live stats
 /// </summary>
 public sealed class MatchStatisticsVisitor : IMatchVisitor
 {

@@ -5,7 +5,7 @@ using System.Text;
 namespace BombBoy.Models.Visitor;
 
 /// <summary>
-/// Concrete Visitor that traverses the Map to produce a console/ASCII text rendering.
+/// sitas visitor duoda ascii art pacio mapo
 /// </summary>
 public sealed class ConsoleMapRenderVisitor : IMatchVisitor
 {

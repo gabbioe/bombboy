@@ -6,15 +6,11 @@ using System.Diagnostics;
 
 namespace BombBoy.Benchmarks;
 
-/// <summary>
-/// Measures execution time and heap memory allocations for resolving and assigning
-/// bomb explosion strategies WITHOUT Flyweight vs. WITH Flyweight.
-/// </summary>
 public static class FlyweightBenchmark
 {
     private static readonly string[] StrategyKeys = { "classic", "diagonal", "area", "piercing", "flood" };
 
-    // Pre-Flyweight implementation: allocates a new strategy instance every time
+    
     private static IExplosionStrategy ResolveWithoutFlyweight(string? strategyName)
     {
         if (string.IsNullOrWhiteSpace(strategyName))
@@ -28,17 +24,17 @@ public static class FlyweightBenchmark
         return new ClassicCrossExplosionStrategy();
     }
 
-    // Current Flyweight implementation: reuses shared instances from ExplosionStrategyFlyweightFactory
+    
     private static IExplosionStrategy ResolveWithFlyweight(string? strategyName) =>
         ExplosionStrategyFlyweightFactory.GetStrategy(strategyName);
 
     public static void Run(int iterations = 200_000)
     {
-        Console.WriteLine("=================================================================");
-        Console.WriteLine($" FLYWEIGHT BENCHMARK ({iterations:N0} strategy resolutions)");
-        Console.WriteLine("=================================================================");
+        
+        Console.WriteLine($"flyweight speed test ({iterations:N0} strategy resolutions)");
+        
 
-        // Warm-up JIT and Flyweight cache
+        
         for (int i = 0; i < 100; i++)
         {
             _ = ResolveWithoutFlyweight(StrategyKeys[i % StrategyKeys.Length]);
@@ -48,7 +44,7 @@ public static class FlyweightBenchmark
         var strategiesWithout = new IExplosionStrategy[iterations];
         var strategiesWith = new IExplosionStrategy[iterations];
 
-        // 1. Measure WITHOUT Flyweight
+        // 1. without flyweight
         GC.Collect();
         GC.WaitForPendingFinalizers();
         GC.Collect();
@@ -66,7 +62,7 @@ public static class FlyweightBenchmark
         long memAfterWithout = GC.GetAllocatedBytesForCurrentThread();
         long allocatedWithout = memAfterWithout - memBeforeWithout;
 
-        // 2. Measure WITH Flyweight
+        // 2. with flyweight
         GC.Collect();
         GC.WaitForPendingFinalizers();
         GC.Collect();
@@ -84,15 +80,15 @@ public static class FlyweightBenchmark
         long memAfterWith = GC.GetAllocatedBytesForCurrentThread();
         long allocatedWith = memAfterWith - memBeforeWith;
 
-        // Prevent dead-code elimination
+        // dont make the gc delete these objs
         GC.KeepAlive(strategiesWithout);
         GC.KeepAlive(strategiesWith);
 
         double speedup = swWithout.Elapsed.TotalMilliseconds / Math.Max(0.001, swWith.Elapsed.TotalMilliseconds);
 
-        Console.WriteLine($"Without Flyweight : {swWithout.Elapsed.TotalMilliseconds,8:F3} ms | {allocatedWithout,10:N0} bytes allocated ({iterations:N0} distinct strategy objects)");
-        Console.WriteLine($"With Flyweight    : {swWith.Elapsed.TotalMilliseconds,8:F3} ms | {allocatedWith,10:N0} bytes allocated ({ExplosionStrategyFlyweightFactory.CachedFlyweightCount} shared flyweight objects)");
-        Console.WriteLine($"Improvement       : {speedup,8:F2}x faster | {allocatedWithout - allocatedWith:N0} bytes saved");
+        Console.WriteLine($"without flyweight : {swWithout.Elapsed.TotalMilliseconds,8:F3} ms | {allocatedWithout,10:N0} bytes allocated ({iterations:N0} unique)");
+        Console.WriteLine($"with flyweight : {swWith.Elapsed.TotalMilliseconds,8:F3} ms | {allocatedWith,10:N0} bytes allocated ({ExplosionStrategyFlyweightFactory.CachedFlyweightCount} shared)");
+        Console.WriteLine($"improved : {speedup,8:F2}x faster | {allocatedWithout - allocatedWith:N0} bytes saved");
         Console.WriteLine();
     }
 }
