@@ -1071,16 +1071,34 @@
     <!-- 2. GAME VIEW -->
     <section id="view-game" class="view-section">
         <div id="game-layout">
-            <!-- Cheat Code Box (Left of Map) -->
-            <div class="map-guide-card" style="width: 190px; padding: 10px 12px; flex-shrink: 0;">
-                <div class="map-guide-header" style="margin-bottom: 6px; padding-bottom: 4px;">
-                    <h4 class="map-guide-title" style="font-size: 12px;">Cheat Console</h4>
+            <!-- Command & Cheat Console (Left of Map - Interpreter + Command) -->
+            <div class="map-guide-card" style="width: 268px; padding: 10px 12px; flex-shrink: 0; display: flex; flex-direction: column; gap: 6px;">
+                <div class="map-guide-header" style="margin-bottom: 2px; padding-bottom: 5px;">
+                    <h4 class="map-guide-title" style="font-size: 12px;">⌨️ Console</h4>
+                    <span style="font-size: 10px; color: #888; font-weight: bold;">Interpreter</span>
                 </div>
-                <input id="cheat-input" type="text" placeholder="noclip / infinitebombs"
-                    style="width: 100%; background: #121416; color: #f0f0f0; border: 1px solid #3c444d; border-radius: 4px; padding: 6px 8px; font-size: 12px; margin-bottom: 6px; outline: none;"
-                    onkeydown="if(event.key === 'Enter') submitCheat()" />
-                <button class="btn-action" style="width: 100%; padding: 6px 8px; font-size: 12px;" onclick="submitCheat()">Apply</button>
-                <div id="active-cheats-list" style="margin-top: 8px; display: flex; flex-direction: column; gap: 6px;"></div>
+
+                <div id="console-output-log"
+                    style="background: #0d0f11; border: 1px solid #2b3137; border-radius: 4px; padding: 6px 8px; height: 155px; overflow-y: auto; font-family: Consolas, monospace; font-size: 11px; line-height: 1.4; color: #b8c4ce; white-space: pre-wrap; word-break: break-word;">
+<span style="color: #7f8c8d;">Type 'help', cheats, or AST combos (';', 'repeat', '@all')...</span></div>
+
+                <div style="display: flex; gap: 4px;">
+                    <input id="cheat-input" type="text" placeholder="e.g. noclip ; give range 5"
+                        style="flex: 1; min-width: 0; background: #121416; color: #f0f0f0; border: 1px solid #3c444d; border-radius: 4px; padding: 6px 8px; font-family: Consolas, monospace; font-size: 11px; outline: none;"
+                        onkeydown="handleConsoleKeyDown(event)" />
+                    <button class="btn-action" style="padding: 6px 10px; font-size: 11px;" onclick="submitCheat()">Run</button>
+                </div>
+
+                <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px;">
+                    <button type="button" onclick="fillAndRunConsole('help')" style="background: #252b31; color: #bdc3c7; border: 1px solid #3a424a; border-radius: 3px; padding: 2px 5px; font-size: 10px; cursor: pointer;">help</button>
+                    <button type="button" onclick="fillAndRunConsole('noclip')" style="background: #252b31; color: #2ecc71; border: 1px solid #3a424a; border-radius: 3px; padding: 2px 5px; font-size: 10px; cursor: pointer;">noclip</button>
+                    <button type="button" onclick="fillAndRunConsole('godmode')" style="background: #252b31; color: #2ecc71; border: 1px solid #3a424a; border-radius: 3px; padding: 2px 5px; font-size: 10px; cursor: pointer;">godmode</button>
+                    <button type="button" onclick="fillAndRunConsole('repeat 3 spawn fusion')" style="background: #252b31; color: #f39c12; border: 1px solid #3a424a; border-radius: 3px; padding: 2px 5px; font-size: 10px; cursor: pointer;">repeat 3 fusion</button>
+                    <button type="button" onclick="fillAndRunConsole('@all give range 4 ; spawn weapon')" style="background: #252b31; color: #3498db; border: 1px solid #3a424a; border-radius: 3px; padding: 2px 5px; font-size: 10px; cursor: pointer;">@all range+wep</button>
+                    <button type="button" onclick="fillAndRunConsole('@enemies freeze')" style="background: #252b31; color: #80d8ff; border: 1px solid #3a424a; border-radius: 3px; padding: 2px 5px; font-size: 10px; cursor: pointer;">@enemies freeze</button>
+                </div>
+
+                <div id="active-cheats-list" style="margin-top: 4px; display: flex; flex-direction: column; gap: 5px;"></div>
             </div>
 
             <div id="game-container">
@@ -1720,6 +1738,7 @@
                 const isMe = (myConnectionId && id === myConnectionId);
                 const isAlive = player.isAlive !== undefined ? player.isAlive : (player.IsAlive !== undefined ? player.IsAlive : true);
                 const lives = player.Lives !== undefined ? player.Lives : (player.lives !== undefined ? player.lives : 1);
+                const isGodMode = player.IsGodMode || player.isGodMode || false;
                 const hasShield = player.HasShield || player.hasShield || false;
                 const weaponEmoji = player.WeaponEmoji || player.weaponEmoji || "";
                 const weaponUses = player.WeaponUses !== undefined ? player.WeaponUses : (player.weaponUses || 0);
@@ -1770,7 +1789,12 @@
                 infoEl.style.top = (y * TILE_SIZE + 34) + "px";
 
                 const livesChip = document.createElement("span");
-                livesChip.textContent = "❤️".repeat(Math.max(0, lives));
+                if (isGodMode) {
+                    livesChip.textContent = "💛";
+                    livesChip.style.filter = "drop-shadow(0 0 4px #f1c40f)";
+                } else {
+                    livesChip.textContent = lives > 3 ? `❤️x${lives}` : "❤️".repeat(Math.max(0, lives));
+                }
                 infoEl.appendChild(livesChip);
 
                 const bombChip = document.createElement("span");
@@ -1804,19 +1828,81 @@
             }
         }
 
+        const consoleHistory = [];
+        let consoleHistoryIndex = -1;
+
+        function appendConsoleLog(text, color = "#b8c4ce") {
+            const logEl = document.getElementById("console-output-log");
+            if (!logEl || !text) return;
+            const line = document.createElement("div");
+            line.style.color = color;
+            line.style.marginTop = "3px";
+            line.textContent = text;
+            logEl.appendChild(line);
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function handleConsoleKeyDown(event) {
+            const input = document.getElementById("cheat-input");
+            if (!input) return;
+
+            if (event.key === "Enter") {
+                event.preventDefault();
+                submitCheat();
+            } else if (event.key === "ArrowUp") {
+                if (consoleHistory.length > 0) {
+                    event.preventDefault();
+                    consoleHistoryIndex = Math.max(0, consoleHistoryIndex - 1);
+                    input.value = consoleHistory[consoleHistoryIndex] || "";
+                }
+            } else if (event.key === "ArrowDown") {
+                if (consoleHistory.length > 0) {
+                    event.preventDefault();
+                    consoleHistoryIndex = Math.min(consoleHistory.length, consoleHistoryIndex + 1);
+                    input.value = consoleHistoryIndex < consoleHistory.length ? consoleHistory[consoleHistoryIndex] : "";
+                }
+            }
+        }
+
+        function fillAndRunConsole(cmdText) {
+            const input = document.getElementById("cheat-input");
+            if (!input) return;
+            input.value = cmdText;
+            submitCheat();
+        }
+
         function submitCheat() {
             const input = document.getElementById("cheat-input");
             if (!input || !input.value.trim()) return;
+            const rawCmd = input.value.trim();
+
+            consoleHistory.push(rawCmd);
+            consoleHistoryIndex = consoleHistory.length;
+            appendConsoleLog(`> ${rawCmd}`, "#f39c12");
+
             if (connection && connection.state === signalR.HubConnectionState.Connected) {
-                connection.invoke("ActivateCheat", input.value.trim()).catch(err => console.error("ActivateCheat error:", err));
+                connection.invoke("ExecuteConsoleCommand", rawCmd)
+                    .then(output => {
+                        if (output) {
+                            const isErr = output.includes("[Error]") || output.includes("[Blocked]");
+                            appendConsoleLog(output, isErr ? "#e74c3c" : "#2ecc71");
+                        }
+                    })
+                    .catch(err => {
+                        console.error("ExecuteConsoleCommand error:", err);
+                        appendConsoleLog("[Error] Failed to execute command.", "#e74c3c");
+                    });
                 input.value = "";
-                input.blur();
             }
         }
 
         function undoCheat(cheatCode) {
             if (connection && connection.state === signalR.HubConnectionState.Connected) {
-                connection.invoke("UndoCheat", cheatCode).catch(err => console.error("UndoCheat error:", err));
+                connection.invoke("ExecuteConsoleCommand", `undo ${cheatCode}`)
+                    .then(output => {
+                        if (output) appendConsoleLog(output, "#e67e22");
+                    })
+                    .catch(err => console.error("UndoCheat error:", err));
             }
         }
 

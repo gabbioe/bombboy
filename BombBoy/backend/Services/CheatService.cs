@@ -8,17 +8,21 @@ public sealed class CheatService
 {
     private readonly Dictionary<string, List<ICommand>> _cheatHistory = new();
 
-    public void ActivateCheat(Player player, string cheatCode)
+    public void ActivateCheat(Player player, string cheatCode) =>
+        TryActivateCheat(player, cheatCode);
+
+    public bool TryActivateCheat(Player player, string cheatCode)
     {
         ICommand? command = cheatCode.Trim().ToLower() switch
         {
             "noclip" => new CheatCode_PassWalls(player),
             "infinitebombs" => new CheatCode_InfiniteBombs(player),
+            "godmode" => new CheatCode_GodMode(player),
             _ => null
         };
 
         if (command == null)
-            return;
+            return false;
 
         if (!_cheatHistory.TryGetValue(player.Id, out var activeList))
         {
@@ -27,10 +31,11 @@ public sealed class CheatService
         }
 
         if (activeList.Any(c => c.Name == command.Name))
-            return;
+            return false;
 
         command.Execute();
         activeList.Add(command);
+        return true;
     }
 
     public void UndoCheat(string connectionId, string cheatCode)

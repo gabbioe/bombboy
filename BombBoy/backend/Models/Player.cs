@@ -48,6 +48,7 @@ public class Player : IMatchVisitable
     public IPlayerComponent Component { get; private set; } = new BasicPlayerComponent();
 
     private bool _manualNoclip = false;
+    public bool IsGodMode { get; set; } = false;
 
     public void Decorate(Func<IPlayerComponent, IPlayerComponent> decoratorFactory)
     {
@@ -58,6 +59,7 @@ public class Player : IMatchVisitable
     {
         Component = new BasicPlayerComponent();
         _manualNoclip = false;
+        IsGodMode = false;
         State = new HealthyState();
     }
 
@@ -100,6 +102,7 @@ public class Player : IMatchVisitable
             ["Direction"] = Direction,
             ["IsAlive"] = IsAlive,
             ["Lives"] = Lives,
+            ["IsGodMode"] = IsGodMode,
             ["HasShield"] = HasShield,
             ["ShieldDuration"] = ShieldDuration,
             ["WeaponEmoji"] = CurrentWeapon?.GetEmoji() ?? "",
@@ -130,11 +133,17 @@ public class Player : IMatchVisitable
     /// </summary>
     public bool TakeDamage()
     {
+        if (IsGodMode)
+            return false;
+
         return State.HandleDamage(this);
     }
 
     public void ApplyFrost(float duration = 2.0f)
     {
+        if (IsGodMode)
+            return;
+
         State.HandleFrostHit(this, duration);
     }
 
@@ -163,6 +172,7 @@ public class Player : IMatchVisitable
             bombRange: BombRange,
             shieldDuration: ShieldDuration,
             manualNoclip: _manualNoclip,
+            isGodMode: IsGodMode,
             currentWeapon: CurrentWeapon,
             component: Component,
             state: State,
@@ -186,6 +196,7 @@ public class Player : IMatchVisitable
         BombRange = snapshot.BombRange;
         ShieldDuration = snapshot.ShieldDuration;
         _manualNoclip = snapshot.ManualNoclip;
+        IsGodMode = snapshot.IsGodMode;
         CurrentWeapon = snapshot.CurrentWeapon;
         ActiveBombStrategy = snapshot.ActiveBombStrategy;
         Component = snapshot.Component is BasicPlayerComponent ? new BasicPlayerComponent() : snapshot.Component;
@@ -208,6 +219,7 @@ public class Player : IMatchVisitable
         public int BombRange { get; }
         public int ShieldDuration { get; }
         public bool ManualNoclip { get; }
+        public bool IsGodMode { get; }
         public Weapon? CurrentWeapon { get; }
         public IPlayerComponent Component { get; }
         public IPlayerState State { get; }
@@ -222,6 +234,7 @@ public class Player : IMatchVisitable
             int bombRange,
             int shieldDuration,
             bool manualNoclip,
+            bool isGodMode,
             Weapon? currentWeapon,
             IPlayerComponent component,
             IPlayerState state,
@@ -236,6 +249,7 @@ public class Player : IMatchVisitable
             BombRange = bombRange;
             ShieldDuration = shieldDuration;
             ManualNoclip = manualNoclip;
+            IsGodMode = isGodMode;
             CurrentWeapon = currentWeapon;
             Component = component;
             State = state;

@@ -1,5 +1,6 @@
 using BombBoy.Models.Adapter;
 using BombBoy.Models;
+using BombBoy.Models.Interpreter;
 using BombBoy.Models.Observer;
 using BombBoy.Models.Strategies;
 using BombBoy.Services.Proxy;
@@ -23,6 +24,7 @@ public class GameManager : IGameManager
     private readonly RoundService _round = new();
     private readonly PlayerService _players = new();
     private readonly CheatService _cheats = new();
+    private readonly ConsoleInterpreterClient _consoleInterpreter = new();
     private readonly GameStateService _gameState = new();
     private readonly Match _match = new Match();
     private readonly LeaderboardObserver _leaderboard = new();
@@ -250,4 +252,13 @@ public class GameManager : IGameManager
 
     public void UndoCheat(string connectionId, string cheatCode) =>
         _cheats.UndoCheat(connectionId, cheatCode);
+
+    public string ExecuteConsoleCommand(string connectionId, string commandLine)
+    {
+        if (!_players.TryGetPlayer(connectionId, out var caller) || caller == null)
+            return "[Error] Caller player not found.";
+
+        var context = new ConsoleContext(commandLine, caller, _match, _round, _cheats);
+        return _consoleInterpreter.Execute(context);
+    }
 }

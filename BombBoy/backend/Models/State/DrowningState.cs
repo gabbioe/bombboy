@@ -54,6 +54,9 @@ public sealed class DrowningState : IPlayerState
             return;
         }
 
+        if (player.IsGodMode)
+            return;
+
         _remainingDrownTime -= deltaTime;
         if (_remainingDrownTime <= 0f)
         {

@@ -84,6 +84,16 @@ public sealed class RoundService
         RemainingSeconds = Math.Max(0, RemainingSeconds - deltaTime);
     }
 
+    public void AdjustRemainingTime(float deltaSeconds)
+    {
+        RemainingSeconds = Math.Clamp(RemainingSeconds + deltaSeconds, 5f, 600f);
+    }
+
+    public void SetRemainingTime(float exactSeconds)
+    {
+        RemainingSeconds = Math.Clamp(exactSeconds, 5f, 600f);
+    }
+
     public bool TryConcludeRound(IReadOnlyList<Player> alivePlayers, out Player? winner)
     {
         winner = null;

@@ -39,4 +39,5 @@ public interface IGameManager
     void VoteSameMap(string connectionId);
     void ActivateCheat(string connectionId, string cheatCode);
     void UndoCheat(string connectionId, string cheatCode);
+    string ExecuteConsoleCommand(string connectionId, string commandLine);
 }

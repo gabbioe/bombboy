@@ -259,4 +259,20 @@ public sealed class GameManagerProtectionProxy : IGameManager
             _realManager.UndoCheat(connectionId, cheatCode);
         }
     }
+
+    public string ExecuteConsoleCommand(string connectionId, string commandLine)
+    {
+        lock (_lock)
+        {
+            string trimmed = (commandLine ?? string.Empty).Trim();
+            bool isHelp = trimmed.Equals("help", StringComparison.OrdinalIgnoreCase)
+                       || trimmed.Equals("/help", StringComparison.OrdinalIgnoreCase);
+
+            if (!isHelp && _realManager.Stage != GameStage.InGame)
+                return "[Blocked] Match must be InGame to execute console commands (or type 'help').";
+
+            InvalidateStateCache();
+            return _realManager.ExecuteConsoleCommand(connectionId, commandLine ?? string.Empty);
+        }
+    }
 }

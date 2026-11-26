@@ -123,4 +123,11 @@ public class AppHub : Hub
         _gameManager.UndoCheat(Context.ConnectionId, cheatCode);
         await Clients.All.SendAsync("Gametick", _gameManager.GetFullMap());
     }
+
+    public async Task<string> ExecuteConsoleCommand(string commandLine)
+    {
+        string output = _gameManager.ExecuteConsoleCommand(Context.ConnectionId, commandLine);
+        await Clients.All.SendAsync("Gametick", _gameManager.GetFullMap());
+        return output;
+    }
 }
