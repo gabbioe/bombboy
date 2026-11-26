@@ -8,14 +8,15 @@ namespace BombBoy.Models.ItemFactories
 
         public Powerup CreatePowerup(int x, int y)
         {
-            // randomly choose between stat, shield, speed, wallpass, and extra life (higher weight for extra life)
-            int choice = _rand.Next(0, 8);
+            // randomly choose between stat, shield, speed, wallpass, bomb fusion, and extra life
+            int choice = _rand.Next(0, 9);
             return choice switch
             {
                 0 => new StatPowerup(x, y, _rand.Next(0, 2) == 0 ? "BombRange" : "BombCount"),
                 1 => new ShieldPowerup(x, y),
                 2 => new SpeedPowerup(x, y),
                 3 => new WallPassPowerup(x, y),
+                4 => new BombFusionPowerup(x, y),
                 _ => new ExtraLifePowerup(x, y)
             };
         }

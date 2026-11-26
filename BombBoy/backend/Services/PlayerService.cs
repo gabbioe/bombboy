@@ -1,4 +1,5 @@
 using BombBoy.Models;
+using BombBoy.Models.Composite;
 using BombBoy.Models.Flyweight;
 using BombBoy.Models.Strategies;
 using System;
@@ -63,6 +64,31 @@ public sealed class PlayerService
             ? ResolveStrategy(strategyName)
             : player.ActiveBombStrategy;
 
-    public static IExplosionStrategy ResolveStrategy(string? strategyName) =>
-        ExplosionStrategyFlyweightFactory.GetStrategy(strategyName);
+    public static IExplosionStrategy ResolveStrategy(string? strategyName)
+    {
+        if (!string.IsNullOrWhiteSpace(strategyName))
+        {
+            string norm = strategyName.Trim().ToLowerInvariant();
+
+            // Standalone Composite Leaf shapes
+            if (norm == "ring" || norm == "hollowring" || norm == "6")
+                return new HollowRingLeaf("HollowRing", blastEmoji: "🔮", baseRadius: 2);
+            if (norm == "knight" || norm == "knightstar" || norm == "7")
+                return new KnightScatterLeaf("KnightStar", blastEmoji: "⚡");
+            if (norm == "checker" || norm == "checkerboard" || norm == "8")
+                return new CheckerboardLeaf("Checkerboard", blastEmoji: "☢️", baseRadius: 2, parity: 0);
+
+            // Multi-shape Composite Trees
+            if (norm.Contains("star") || norm.Contains("bull") || norm == "9")
+                return CompositeBombPresets.CreatePlasmaStarburst();
+            if (norm.Contains("cata") || norm.Contains("grand") || norm == "0")
+                return CompositeBombPresets.CreateArcaneCataclysm();
+            if (norm.Contains("clus") || norm.Contains("biocheck") || norm == "-")
+                return CompositeBombPresets.CreateBioCluster();
+            if (norm.Contains("frost") || norm.Contains("double") || norm.Contains("vort") || norm == "=")
+                return CompositeBombPresets.CreateFrostfireVortex();
+        }
+
+        return ExplosionStrategyFlyweightFactory.GetStrategy(strategyName);
+    }
 }

@@ -431,11 +431,13 @@
             font-size: 20px;
         }
 
-        .tile-bomb {
+        .tile-bomb,
+        .tile-bomb-composite {
             display: flex;
             align-items: center;
             justify-content: center;
-            animation: bomb-pulse 0.6s infinite alternate;
+            animation: bomb-pulse 0.55s infinite alternate;
+            border-radius: 50%;
         }
 
         .tile-bomb::after {
@@ -444,24 +446,76 @@
             filter: drop-shadow(0 2px 4px rgba(0,0,0,0.7));
         }
 
-        @keyframes bomb-pulse {
-            from { transform: scale(0.95); }
-            to { transform: scale(1.12); }
+        .tile-bomb-plasma {
+            font-size: 24px;
+            box-shadow: 0 0 12px #00e5ff, inset 0 0 8px rgba(0, 229, 255, 0.45);
+            filter: drop-shadow(0 0 6px #00e5ff);
         }
 
-        .tile-blast {
-            background: radial-gradient(circle, #ffe600 0%, #ff5722 60%, #b71c1c 100%) !important;
+        .tile-bomb-void {
+            font-size: 24px;
+            box-shadow: 0 0 14px #d500f9, inset 0 0 8px rgba(213, 0, 249, 0.45);
+            filter: drop-shadow(0 0 6px #d500f9);
+        }
+
+        .tile-bomb-bio {
+            font-size: 24px;
+            box-shadow: 0 0 12px #00e676, inset 0 0 8px rgba(0, 230, 118, 0.45);
+            filter: drop-shadow(0 0 6px #00e676);
+        }
+
+        .tile-bomb-vortex {
+            font-size: 24px;
+            box-shadow: 0 0 12px #ff6d00, 0 0 16px #40c4ff;
+            filter: drop-shadow(0 0 5px #80d8ff);
+        }
+
+        @keyframes bomb-pulse {
+            from { transform: scale(0.92); }
+            to { transform: scale(1.15); }
+        }
+
+        .tile-blast,
+        .tile-blast-plasma,
+        .tile-blast-void,
+        .tile-blast-toxic,
+        .tile-blast-frost {
             border-radius: 4px;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 0 10px #ff5722, inset 0 0 8px #ffe600;
+            font-size: 21px;
             animation: blast-flicker 0.12s infinite alternate;
+        }
+
+        .tile-blast {
+            background: radial-gradient(circle, #ffe600 0%, #ff5722 60%, #b71c1c 100%) !important;
+            box-shadow: 0 0 10px #ff5722, inset 0 0 8px #ffe600;
         }
 
         .tile-blast::after {
             content: "💥";
             font-size: 22px;
+        }
+
+        .tile-blast-plasma {
+            background: radial-gradient(circle, #e0ffff 0%, #00e5ff 55%, #004ecb 100%) !important;
+            box-shadow: 0 0 12px #00e5ff, inset 0 0 8px #e0ffff;
+        }
+
+        .tile-blast-void {
+            background: radial-gradient(circle, #f3e5f5 0%, #d500f9 55%, #4a148c 100%) !important;
+            box-shadow: 0 0 12px #d500f9, inset 0 0 8px #ea80fc;
+        }
+
+        .tile-blast-toxic {
+            background: radial-gradient(circle, #f4ff81 0%, #00e676 55%, #1b5e20 100%) !important;
+            box-shadow: 0 0 12px #00e676, inset 0 0 8px #b9f6ca;
+        }
+
+        .tile-blast-frost {
+            background: radial-gradient(circle, #ffffff 0%, #80d8ff 55%, #01579b 100%) !important;
+            box-shadow: 0 0 12px #80d8ff, inset 0 0 8px #ffffff;
         }
 
         @keyframes blast-flicker {
@@ -902,12 +956,28 @@
             <div class="strategy-picker">
                 <label for="strategy-select">Bomb Strategy:</label>
                 <select id="strategy-select" class="strategy-select" onchange="onStrategyChange(this.value)">
-                    <option value="classic">1. Classic (Cross +)</option>
-                    <option value="diagonal">2. Diagonal (X-Shape)</option>
-                    <option value="area">3. Area Box (3x3)</option>
-                    <option value="piercing">4. Piercing (Penetrating)</option>
-                    <option value="floodfill">5. Flood Fill (BFS)</option>
+                    <optgroup label="Original Strategies (Flyweight Leaves)">
+                        <option value="classic">1. Classic (Cross +)</option>
+                        <option value="diagonal">2. Diagonal (X-Shape)</option>
+                        <option value="area">3. Area Box (3x3)</option>
+                        <option value="piercing">4. Piercing (Penetrating)</option>
+                        <option value="floodfill">5. Flood Fill (BFS)</option>
+                    </optgroup>
+                    <optgroup label="Standalone Geometric Leaves">
+                        <option value="ring">6. 🔮 Hollow Ring (Leaf Only)</option>
+                        <option value="knight">7. ⚡ Knight Star (Leaf Only)</option>
+                        <option value="checker">8. ☢️ Checkerboard (Leaf Only)</option>
+                    </optgroup>
+                    <optgroup label="Composite Trees (Leaves Combined)">
+                        <option value="bullseye">9. ⚛️ Bullseye Crosshair (Ring + Center + Sights)</option>
+                        <option value="grandmaster">0. 🌌 Grandmaster Crown (Classic + Knights + Frost X)</option>
+                        <option value="biochecker">-. ☣️ Bio-Checkerboard (Checkerboard + Corner Pins)</option>
+                        <option value="doublering">=. ☯️ Frostfire Double-Ring (2 Rings + Piercing)</option>
+                    </optgroup>
                 </select>
+            </div>
+            <div id="hud-strategy-tree-pill" class="hud-pill" style="display: none; font-size: 12px; color: #f39c12;" title="Active Composite / Leaf Explosion Tree">
+                🧬 <span id="hud-strategy-tree">Classic</span>
             </div>
         </div>
     </header>
@@ -1056,7 +1126,8 @@
                 Move: <strong>W, A, S, D</strong> or <strong>Arrows</strong> &nbsp;|&nbsp;
                 Bomb: <strong>Spacebar</strong> &nbsp;|&nbsp;
                 Use Weapon: <strong>E</strong> or <strong>Shift+Space</strong> &nbsp;|&nbsp;
-                Strategy: <strong>1-5</strong>
+                Leaves: <strong>1-8</strong> &nbsp;|&nbsp;
+                Composites: <strong>9, 0, -, =</strong>
             </div>
 
             <!-- D-Pad for mouse testing -->
@@ -1583,8 +1654,32 @@
 
             if (symbol === "💣" || symbol === "O" || symbol === "Bomb") {
                 entEl.classList.add("tile-bomb");
+            } else if (symbol === "⚛️") {
+                entEl.classList.add("tile-bomb-composite", "tile-bomb-plasma");
+                entEl.textContent = symbol;
+            } else if (symbol === "🌌") {
+                entEl.classList.add("tile-bomb-composite", "tile-bomb-void");
+                entEl.textContent = symbol;
+            } else if (symbol === "☣️") {
+                entEl.classList.add("tile-bomb-composite", "tile-bomb-bio");
+                entEl.textContent = symbol;
+            } else if (symbol === "☯️") {
+                entEl.classList.add("tile-bomb-composite", "tile-bomb-vortex");
+                entEl.textContent = symbol;
             } else if (symbol === "💥" || symbol === "*" || symbol === "Blast") {
                 entEl.classList.add("tile-blast");
+            } else if (symbol === "⚡") {
+                entEl.classList.add("tile-blast-plasma");
+                entEl.textContent = symbol;
+            } else if (symbol === "🔮") {
+                entEl.classList.add("tile-blast-void");
+                entEl.textContent = symbol;
+            } else if (symbol === "☢️") {
+                entEl.classList.add("tile-blast-toxic");
+                entEl.textContent = symbol;
+            } else if (symbol === "❄️") {
+                entEl.classList.add("tile-blast-frost");
+                entEl.textContent = symbol;
             } else {
                 entEl.textContent = symbol;
             }
@@ -1629,7 +1724,17 @@
                 const weaponEmoji = player.WeaponEmoji || player.weaponEmoji || "";
                 const weaponUses = player.WeaponUses !== undefined ? player.WeaponUses : (player.weaponUses || 0);
                 const bombCount = player.BombCount !== undefined ? player.BombCount : (player.bombCount || 1);
+                const bombStrategy = player.BombStrategy || player.bombStrategy || "Classic";
                 const direction = player.Direction || player.direction || "Down";
+
+                if (isMe) {
+                    const treePill = document.getElementById("hud-strategy-tree-pill");
+                    const treeText = document.getElementById("hud-strategy-tree");
+                    if (treePill && treeText) {
+                        treePill.style.display = "inline-flex";
+                        treeText.textContent = bombStrategy;
+                    }
+                }
 
                 if (!isAlive) return;
 
@@ -1639,7 +1744,7 @@
                 playerEl.style.left = (x * TILE_SIZE + 4) + "px";
                 playerEl.style.top = (y * TILE_SIZE + 4) + "px";
                 playerEl.textContent = name.slice(-2).toUpperCase();
-                playerEl.title = `${name} | Lives: ${lives} | Facing: ${direction}`;
+                playerEl.title = `${name} | Lives: ${lives} | Facing: ${direction} | Bomb: ${bombStrategy}`;
 
                 // Directional arrow hovering above player
                 const dirEl = document.createElement("div");
@@ -1689,7 +1794,7 @@
 
         function placeBomb() {
             if (connection && connection.state === signalR.HubConnectionState.Connected) {
-                connection.invoke("PlaceBomb", selectedStrategy).catch(err => console.error("PlaceBomb error:", err));
+                connection.invoke("PlaceBomb", null).catch(err => console.error("PlaceBomb error:", err));
             }
         }
 
@@ -1768,6 +1873,13 @@
             if (event.key === "3") { onStrategyChange("area"); return; }
             if (event.key === "4") { onStrategyChange("piercing"); return; }
             if (event.key === "5") { onStrategyChange("floodfill"); return; }
+            if (event.key === "6") { onStrategyChange("ring"); return; }
+            if (event.key === "7") { onStrategyChange("knight"); return; }
+            if (event.key === "8") { onStrategyChange("checker"); return; }
+            if (event.key === "9") { onStrategyChange("bullseye"); return; }
+            if (event.key === "0") { onStrategyChange("grandmaster"); return; }
+            if (event.key === "-") { onStrategyChange("biochecker"); return; }
+            if (event.key === "=") { onStrategyChange("doublering"); return; }
 
             if (event.code === "Space" || event.key === " ") {
                 event.preventDefault();
@@ -1984,6 +2096,10 @@
                         <span class="guide-item-icon">🧥</span>
                         <div class="guide-item-desc"><strong>Frozen Coat (Shield)</strong><span>Ice fur coat – acts as a shield absorbing one fatal blow.</span></div>
                     </div>
+                    <div class="guide-item">
+                        <span class="guide-item-icon">💠</span>
+                        <div class="guide-item-desc"><strong>Frost Bomb Fusion (Composite)</strong><span>Fuses an extra explosion pattern into your active bomb strategy tree.</span></div>
+                    </div>
                 `;
             } else {
                 wepCont.innerHTML = `
@@ -2014,6 +2130,10 @@
                     <div class="guide-item">
                         <span class="guide-item-icon">❤️</span>
                         <div class="guide-item-desc"><strong>Extra Life</strong><span>Grants an extra life (capped at 3 lives).</span></div>
+                    </div>
+                    <div class="guide-item">
+                        <span class="guide-item-icon">🧬</span>
+                        <div class="guide-item-desc"><strong>Bomb Fusion (Composite)</strong><span>Fuses an extra explosion pattern into your active bomb strategy tree.</span></div>
                     </div>
                 `;
             }

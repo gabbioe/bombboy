@@ -1,6 +1,7 @@
 using BombBoy.Models.Tiles;
 using BombBoy.Models.Visitor;
 using System;
+using System.Collections.Generic;
 using System.Text.Json;
 
 namespace BombBoy.Models;
@@ -12,6 +13,7 @@ public class Map : IPrototype<Map>, IMatchVisitable
     private int Size_Y { get; set; }
 
     private BasicTile[,] MapTileGrid = null!;
+    private HashSet<(int x, int y)>? _activeDetonationTiles;
 
     public string? CurrentBlastOwnerId { get; set; }
     public string CurrentBlastEmoji { get; set; } = "💥";
@@ -112,6 +114,16 @@ public class Map : IPrototype<Map>, IMatchVisitable
         return x >= 0 && x < Size_X && y >= 0 && y < Size_Y;
     }
 
+    public void BeginDetonation()
+    {
+        _activeDetonationTiles = new HashSet<(int x, int y)>();
+    }
+
+    public void EndDetonation()
+    {
+        _activeDetonationTiles = null;
+    }
+
     public void SpawnBlast(int x, int y, int durationTicks = 10)
     {
         // 1. Boundary check
@@ -119,6 +131,8 @@ public class Map : IPrototype<Map>, IMatchVisitable
         if (MapTileGrid[x, y] == null) return;
         // 2. Do not spawn blast on indestructible borders or pillars
         if (MapTileGrid[x, y].Type == "IndestructableTile") return;
+        // 2b. Deduplicate overlapping coordinates within a single Composite bomb detonation
+        if (_activeDetonationTiles != null && !_activeDetonationTiles.Add((x, y))) return;
         // 3. If it's a destructible block, damage it and turn it into floor
         if (MapTileGrid[x, y].DoDamage())
         {

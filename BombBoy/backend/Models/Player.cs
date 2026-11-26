@@ -1,3 +1,4 @@
+using BombBoy.Models.Composite;
 using BombBoy.Models.Decorator;
 using BombBoy.Models.Flyweight;
 using BombBoy.Models.GridEntities;
@@ -105,6 +106,7 @@ public class Player : IMatchVisitable
             ["WeaponUses"] = CurrentWeapon?.UsesCount ?? 0,
             ["BombCount"] = BombCount,
             ["BombRange"] = BombRange,
+            ["BombStrategy"] = IExplosionComponent.Describe(ActiveBombStrategy),
             ["State"] = State.StateName,
             ["StateEmoji"] = State.StatusEmoji
         };

@@ -1,5 +1,6 @@
 namespace BombBoy.Models.GridEntities;
 
+using BombBoy.Models.Composite;
 using BombBoy.Models.Flyweight;
 using BombBoy.Models.Strategies;
 
@@ -12,11 +13,11 @@ public class Bomb : Entity
     public string OwnerId { get; set; }
     public string BlastEmoji { get; set; } = "💥";
 
-    // Strategy Pattern Context
+    // Strategy / Composite Pattern Context
     public IExplosionStrategy Strategy { get; set; }
 
     public Bomb(int x, int y, int range, IExplosionStrategy strategy, string ownerId, string blastEmoji = "💥") 
-        : base(layer: 1, type: "💣")
+        : base(layer: 1, type: strategy is IExplosionComponent comp ? comp.BombEmoji : "💣")
     {
         X = x;
         Y = y;
@@ -45,9 +46,17 @@ public class Bomb : Entity
     {
         map.CurrentBlastOwnerId = OwnerId;
         map.CurrentBlastEmoji = BlastEmoji;
-        // Delegate explosion to the strategy
-        Strategy.Explode(map, X, Y, Range);
-        map.CurrentBlastEmoji = "💥";
-        map.CurrentBlastOwnerId = null;
+        map.BeginDetonation();
+        try
+        {
+            // Delegate explosion to the strategy (Leaf or Composite tree)
+            Strategy.Explode(map, X, Y, Range);
+        }
+        finally
+        {
+            map.EndDetonation();
+            map.CurrentBlastEmoji = "💥";
+            map.CurrentBlastOwnerId = null;
+        }
     }
 }
