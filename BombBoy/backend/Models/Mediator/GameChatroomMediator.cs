@@ -79,8 +79,8 @@ public sealed class GameChatroomMediator : AbstractChatMediator
         // 3. Messages originating from a PlayerChatColleague
         if (colleague is PlayerChatColleague sender)
         {
-            // 3a. '!bounty [target]' -> route to BountyMasterColleague
-            if (trimmed.StartsWith("!bounty", StringComparison.OrdinalIgnoreCase))
+            // 3a. '/bounty [target]' -> route to BountyMasterColleague
+            if (trimmed.StartsWith("/bounty", StringComparison.OrdinalIgnoreCase))
             {
                 if (_getCurrentStage() != GameStage.InGame)
                 {
@@ -91,15 +91,15 @@ public sealed class GameChatroomMediator : AbstractChatMediator
                 return;
             }
 
-            // 3b. '!status' -> route to ArenaAnnouncerColleague
-            if (trimmed.Equals("!status", StringComparison.OrdinalIgnoreCase))
+            // 3b. '/status' -> route to ArenaAnnouncerColleague
+            if (trimmed.Equals("/status", StringComparison.OrdinalIgnoreCase))
             {
                 AnnouncerColleague?.Notify(sender.Name, trimmed, "Announcer");
                 return;
             }
 
-            // 3c. '@PlayerName secret' -> private Whisper between two PlayerChatColleagues + SoundCueColleague
-            if (trimmed.StartsWith('@'))
+            // 3c. '/@PlayerName secret' -> private Whisper between two PlayerChatColleagues + SoundCueColleague
+            if (trimmed.StartsWith("/@", StringComparison.Ordinal))
             {
                 HandleWhisper(sender, trimmed);
                 return;
@@ -124,13 +124,13 @@ public sealed class GameChatroomMediator : AbstractChatMediator
     private void HandleWhisper(PlayerChatColleague sender, string trimmed)
     {
         int firstSpace = trimmed.IndexOf(' ');
-        if (firstSpace <= 1 || firstSpace >= trimmed.Length - 1)
+        if (firstSpace <= 2 || firstSpace >= trimmed.Length - 1)
         {
-            sender.Notify("System", "Usage: @PlayerName <message>", "System");
+            sender.Notify("System", "Usage: /@PlayerName <message>", "System");
             return;
         }
 
-        string targetQuery = trimmed[1..firstSpace];
+        string targetQuery = trimmed[2..firstSpace];
         string body = trimmed[(firstSpace + 1)..].Trim();
 
         var recipient = _players.Values.FirstOrDefault(p =>

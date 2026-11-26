@@ -1080,18 +1080,18 @@
 
                 <div id="console-output-log"
                     style="background: #0d0f11; border: 1px solid #2b3137; border-radius: 4px; padding: 6px 8px; height: 175px; overflow-y: auto; font-family: Consolas, monospace; font-size: 11px; line-height: 1.4; color: #b8c4ce; white-space: pre-wrap; word-break: break-word;">
-<span style="color: #7f8c8d;">Chat freely, '@name msg' whisper, '!bounty', or '/cmd' for console...</span></div>
+<span style="color: #7f8c8d;">Chat freely, or use '/' for commands ('/@name msg', '/bounty', '/help')...</span></div>
 
                 <div style="display: flex; gap: 4px;">
-                    <input id="cheat-input" type="text" placeholder="Chat, !bounty, or /noclip ; give range 5"
+                    <input id="cheat-input" type="text" placeholder="Chat, /@name, /bounty, or /noclip"
                         style="flex: 1; min-width: 0; background: #121416; color: #f0f0f0; border: 1px solid #3c444d; border-radius: 4px; padding: 6px 8px; font-family: Consolas, monospace; font-size: 11px; outline: none;"
                         onkeydown="handleConsoleKeyDown(event)" />
                     <button class="btn-action" style="padding: 6px 10px; font-size: 11px;" onclick="submitCheat()">Send</button>
                 </div>
 
                 <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px;">
-                    <button type="button" onclick="fillAndRunConsole('!bounty')" title="Mediator: BountyMasterColleague" style="background: #2c2518; color: #f1c40f; border: 1px solid #6b531d; border-radius: 3px; padding: 2px 5px; font-size: 10px; cursor: pointer;">🎯 !bounty</button>
-                    <button type="button" onclick="fillAndRunConsole('!status')" title="Mediator: ArenaAnnouncerColleague" style="background: #172a31; color: #00e5ff; border: 1px solid #245363; border-radius: 3px; padding: 2px 5px; font-size: 10px; cursor: pointer;">📢 !status</button>
+                    <button type="button" onclick="fillAndRunConsole('/bounty')" title="Mediator: BountyMasterColleague" style="background: #2c2518; color: #f1c40f; border: 1px solid #6b531d; border-radius: 3px; padding: 2px 5px; font-size: 10px; cursor: pointer;">🎯 /bounty</button>
+                    <button type="button" onclick="fillAndRunConsole('/status')" title="Mediator: ArenaAnnouncerColleague" style="background: #172a31; color: #00e5ff; border: 1px solid #245363; border-radius: 3px; padding: 2px 5px; font-size: 10px; cursor: pointer;">📢 /status</button>
                     <button type="button" onclick="fillAndRunConsole('GLHF everyone!')" title="Mediator: PlayerChatColleague" style="background: #252b31; color: #ecf0f1; border: 1px solid #3a424a; border-radius: 3px; padding: 2px 5px; font-size: 10px; cursor: pointer;">💬 GLHF!</button>
                     <button type="button" onclick="fillAndRunConsole('/help')" style="background: #252b31; color: #bdc3c7; border: 1px solid #3a424a; border-radius: 3px; padding: 2px 5px; font-size: 10px; cursor: pointer;">/help</button>
                     <button type="button" onclick="fillAndRunConsole('/noclip')" style="background: #252b31; color: #2ecc71; border: 1px solid #3a424a; border-radius: 3px; padding: 2px 5px; font-size: 10px; cursor: pointer;">/noclip</button>
@@ -1873,6 +1873,19 @@
             submitCheat();
         }
 
+        function isMediatorSlashCommand(rawText) {
+            const lower = rawText.toLowerCase();
+            if (lower === "/bounty" || lower.startsWith("/bounty ") || lower === "/status") {
+                return true;
+            }
+            if (lower.startsWith("/@") && !rawText.includes(";")) {
+                const firstWord = lower.split(/\s+/)[0];
+                const interpreterScopes = new Set(["/@all", "/@alive", "/@enemies", "/@me"]);
+                return !interpreterScopes.has(firstWord);
+            }
+            return false;
+        }
+
         function submitCheat() {
             const input = document.getElementById("cheat-input");
             if (!input || !input.value.trim()) return;
@@ -1884,8 +1897,8 @@
 
             if (!connection || connection.state !== signalR.HubConnectionState.Connected) return;
 
-            // '/' prefix -> Interpreter + Command console pipeline
-            if (rawText.startsWith("/")) {
+            // '/' commands (except Mediator chat directives '/bounty', '/status', '/@PlayerName') -> Interpreter + Command
+            if (rawText.startsWith("/") && !isMediatorSlashCommand(rawText)) {
                 const cmdBody = rawText.slice(1).trim();
                 appendConsoleLog(`> /${cmdBody}`, "#f39c12");
                 connection.invoke("ExecuteConsoleCommand", cmdBody)
@@ -1902,7 +1915,7 @@
                 return;
             }
 
-            // Otherwise -> Mediator Chatroom pipeline (Public, Ghost, @Whisper, !bounty, !status)
+            // Plain chat OR Mediator slash commands ('/bounty', '/status', '/@PlayerName <msg>')
             connection.invoke("SendChatMessage", rawText)
                 .catch(err => console.error("SendChatMessage error:", err));
         }

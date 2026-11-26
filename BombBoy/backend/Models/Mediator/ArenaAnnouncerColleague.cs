@@ -30,7 +30,7 @@ public sealed class ArenaAnnouncerColleague : ChatColleague
 
     public void AnnounceRoundStart(int roundNumber, string mapType)
     {
-        Send($"🔔 Round {roundNumber} started on {mapType.ToUpperInvariant()} map! Type chat, '@name msg', '!bounty', or '/help'.");
+        Send($"🔔 Round {roundNumber} started on {mapType.ToUpperInvariant()} map! Chat freely or use '/@name msg', '/bounty', '/status', '/help'.");
     }
 
     public void AnnounceRoundEnd(string winnerName, int roundNumber)

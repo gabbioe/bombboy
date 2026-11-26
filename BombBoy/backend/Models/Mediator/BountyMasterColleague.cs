@@ -25,8 +25,8 @@ public sealed class BountyMasterColleague : ChatColleague
 
     public override void Notify(string senderName, string message, string channel)
     {
-        string arg = message.Length > "!bounty".Length
-            ? message["!bounty".Length..].Trim().TrimStart('@')
+        string arg = message.Length > "/bounty".Length
+            ? message["/bounty".Length..].Trim().TrimStart('@')
             : string.Empty;
 
         var aliveCandidates = _match.GetAlivePlayers()

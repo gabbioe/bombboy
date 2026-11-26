@@ -25,11 +25,12 @@ public class ArenaCommandTerminalExpression : AbstractConsoleExpression
         {
             case "help":
                 context.AppendOutput(
-                    "Commands: noclip | infinitebombs | godmode | undo <cheat> | " +
-                    "give <range|bombs|lives|shield|speed> <N> | " +
-                    "spawn <fusion|weapon|powerup|shield|bomb> | " +
-                    "strategy <name> | clear [N] | time <+S|S> | freeze | heal | " +
-                    "Combinators: <cmd1> ; <cmd2> | repeat <N> <cmd> | @all / @enemies / @alive <cmd>");
+                    "Chat Mediator: /@name <msg> | /bounty [name] | /status\n" +
+                    "Interpreter: /noclip | /infinitebombs | /godmode | /undo <cheat> | " +
+                    "/give <range|bombs|lives|shield|speed> <N> | " +
+                    "/spawn <fusion|weapon|powerup|shield|bomb> | " +
+                    "/strategy <name> | /clear [N] | /time <+S|S> | /freeze | /heal | " +
+                    "Combinators: <cmd1> ; <cmd2> | /repeat <N> <cmd> | /@all /@enemies /@alive <cmd>");
                 break;
 
             case "clear":
