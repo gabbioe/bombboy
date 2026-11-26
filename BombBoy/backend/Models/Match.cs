@@ -46,6 +46,7 @@ namespace BombBoy.Models
         }
 
         public string CurrentMapType { get; private set; } = "normal";
+        public event Action<Player, Player?>? OnPlayerEliminated;
 
         #region Observer Pattern Implementation
         public void Attach(IGameEventObserver observer)
@@ -67,8 +68,11 @@ namespace BombBoy.Models
             }
         }
 
-        public void NotifyPlayerDied(Player victim, Player? killer) =>
+        public void NotifyPlayerDied(Player victim, Player? killer)
+        {
             NotifyObservers(obs => obs.OnPlayerDied(victim, killer));
+            OnPlayerEliminated?.Invoke(victim, killer);
+        }
 
         public void NotifyRoundEnded(Player? winner, int roundNumber, int totalRounds) =>
             NotifyObservers(obs => obs.OnRoundEnded(winner, roundNumber, totalRounds));

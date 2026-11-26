@@ -7,6 +7,7 @@ namespace BombBoy.Services.Proxy;
 public interface IGameManager
 {
     event Action<string, float>? OnSoundEffectPlayed;
+    event Action<string, string, string, string>? OnChatMessageDelivered;
 
     int TotalRounds { get; set; }
     int RoundDurationSeconds { get; set; }
@@ -40,4 +41,5 @@ public interface IGameManager
     void ActivateCheat(string connectionId, string cheatCode);
     void UndoCheat(string connectionId, string cheatCode);
     string ExecuteConsoleCommand(string connectionId, string commandLine);
+    void SendChatMessage(string connectionId, string message);
 }

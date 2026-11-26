@@ -17,6 +17,11 @@ public class GameLoopService : BackgroundService
         {
             _ = _hubContext.Clients.All.SendAsync("PlaySoundEffect", soundFile, volume);
         };
+
+        _gameManager.OnChatMessageDelivered += (recipientId, senderName, message, channel) =>
+        {
+            _ = _hubContext.Clients.Client(recipientId).SendAsync("ReceiveChatMessage", senderName, message, channel);
+        };
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)

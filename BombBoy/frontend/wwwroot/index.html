@@ -1071,31 +1071,33 @@
     <!-- 2. GAME VIEW -->
     <section id="view-game" class="view-section">
         <div id="game-layout">
-            <!-- Command & Cheat Console (Left of Map - Interpreter + Command) -->
-            <div class="map-guide-card" style="width: 268px; padding: 10px 12px; flex-shrink: 0; display: flex; flex-direction: column; gap: 6px;">
+            <!-- Unified Chat, Command & Cheat Console (Mediator + Interpreter + Command) -->
+            <div class="map-guide-card" style="width: 276px; padding: 10px 12px; flex-shrink: 0; display: flex; flex-direction: column; gap: 6px;">
                 <div class="map-guide-header" style="margin-bottom: 2px; padding-bottom: 5px;">
-                    <h4 class="map-guide-title" style="font-size: 12px;">⌨️ Console</h4>
-                    <span style="font-size: 10px; color: #888; font-weight: bold;">Interpreter</span>
+                    <h4 class="map-guide-title" style="font-size: 12px;">💬 Chat &amp; Console</h4>
+                    <span style="font-size: 10px; color: #888; font-weight: bold;">Mediator · Interpreter</span>
                 </div>
 
                 <div id="console-output-log"
-                    style="background: #0d0f11; border: 1px solid #2b3137; border-radius: 4px; padding: 6px 8px; height: 155px; overflow-y: auto; font-family: Consolas, monospace; font-size: 11px; line-height: 1.4; color: #b8c4ce; white-space: pre-wrap; word-break: break-word;">
-<span style="color: #7f8c8d;">Type 'help', cheats, or AST combos (';', 'repeat', '@all')...</span></div>
+                    style="background: #0d0f11; border: 1px solid #2b3137; border-radius: 4px; padding: 6px 8px; height: 175px; overflow-y: auto; font-family: Consolas, monospace; font-size: 11px; line-height: 1.4; color: #b8c4ce; white-space: pre-wrap; word-break: break-word;">
+<span style="color: #7f8c8d;">Chat freely, '@name msg' whisper, '!bounty', or '/cmd' for console...</span></div>
 
                 <div style="display: flex; gap: 4px;">
-                    <input id="cheat-input" type="text" placeholder="e.g. noclip ; give range 5"
+                    <input id="cheat-input" type="text" placeholder="Chat, !bounty, or /noclip ; give range 5"
                         style="flex: 1; min-width: 0; background: #121416; color: #f0f0f0; border: 1px solid #3c444d; border-radius: 4px; padding: 6px 8px; font-family: Consolas, monospace; font-size: 11px; outline: none;"
                         onkeydown="handleConsoleKeyDown(event)" />
-                    <button class="btn-action" style="padding: 6px 10px; font-size: 11px;" onclick="submitCheat()">Run</button>
+                    <button class="btn-action" style="padding: 6px 10px; font-size: 11px;" onclick="submitCheat()">Send</button>
                 </div>
 
                 <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px;">
-                    <button type="button" onclick="fillAndRunConsole('help')" style="background: #252b31; color: #bdc3c7; border: 1px solid #3a424a; border-radius: 3px; padding: 2px 5px; font-size: 10px; cursor: pointer;">help</button>
-                    <button type="button" onclick="fillAndRunConsole('noclip')" style="background: #252b31; color: #2ecc71; border: 1px solid #3a424a; border-radius: 3px; padding: 2px 5px; font-size: 10px; cursor: pointer;">noclip</button>
-                    <button type="button" onclick="fillAndRunConsole('godmode')" style="background: #252b31; color: #2ecc71; border: 1px solid #3a424a; border-radius: 3px; padding: 2px 5px; font-size: 10px; cursor: pointer;">godmode</button>
-                    <button type="button" onclick="fillAndRunConsole('repeat 3 spawn fusion')" style="background: #252b31; color: #f39c12; border: 1px solid #3a424a; border-radius: 3px; padding: 2px 5px; font-size: 10px; cursor: pointer;">repeat 3 fusion</button>
-                    <button type="button" onclick="fillAndRunConsole('@all give range 4 ; spawn weapon')" style="background: #252b31; color: #3498db; border: 1px solid #3a424a; border-radius: 3px; padding: 2px 5px; font-size: 10px; cursor: pointer;">@all range+wep</button>
-                    <button type="button" onclick="fillAndRunConsole('@enemies freeze')" style="background: #252b31; color: #80d8ff; border: 1px solid #3a424a; border-radius: 3px; padding: 2px 5px; font-size: 10px; cursor: pointer;">@enemies freeze</button>
+                    <button type="button" onclick="fillAndRunConsole('!bounty')" title="Mediator: BountyMasterColleague" style="background: #2c2518; color: #f1c40f; border: 1px solid #6b531d; border-radius: 3px; padding: 2px 5px; font-size: 10px; cursor: pointer;">🎯 !bounty</button>
+                    <button type="button" onclick="fillAndRunConsole('!status')" title="Mediator: ArenaAnnouncerColleague" style="background: #172a31; color: #00e5ff; border: 1px solid #245363; border-radius: 3px; padding: 2px 5px; font-size: 10px; cursor: pointer;">📢 !status</button>
+                    <button type="button" onclick="fillAndRunConsole('GLHF everyone!')" title="Mediator: PlayerChatColleague" style="background: #252b31; color: #ecf0f1; border: 1px solid #3a424a; border-radius: 3px; padding: 2px 5px; font-size: 10px; cursor: pointer;">💬 GLHF!</button>
+                    <button type="button" onclick="fillAndRunConsole('/help')" style="background: #252b31; color: #bdc3c7; border: 1px solid #3a424a; border-radius: 3px; padding: 2px 5px; font-size: 10px; cursor: pointer;">/help</button>
+                    <button type="button" onclick="fillAndRunConsole('/noclip')" style="background: #252b31; color: #2ecc71; border: 1px solid #3a424a; border-radius: 3px; padding: 2px 5px; font-size: 10px; cursor: pointer;">/noclip</button>
+                    <button type="button" onclick="fillAndRunConsole('/godmode')" style="background: #252b31; color: #2ecc71; border: 1px solid #3a424a; border-radius: 3px; padding: 2px 5px; font-size: 10px; cursor: pointer;">/godmode</button>
+                    <button type="button" onclick="fillAndRunConsole('/repeat 3 spawn fusion')" style="background: #252b31; color: #f39c12; border: 1px solid #3a424a; border-radius: 3px; padding: 2px 5px; font-size: 10px; cursor: pointer;">/repeat 3 fusion</button>
+                    <button type="button" onclick="fillAndRunConsole('/@all give range 4 ; spawn weapon')" style="background: #252b31; color: #3498db; border: 1px solid #3a424a; border-radius: 3px; padding: 2px 5px; font-size: 10px; cursor: pointer;">/@all range+wep</button>
                 </div>
 
                 <div id="active-cheats-list" style="margin-top: 4px; display: flex; flex-direction: column; gap: 5px;"></div>
@@ -1874,14 +1876,19 @@
         function submitCheat() {
             const input = document.getElementById("cheat-input");
             if (!input || !input.value.trim()) return;
-            const rawCmd = input.value.trim();
+            const rawText = input.value.trim();
 
-            consoleHistory.push(rawCmd);
+            consoleHistory.push(rawText);
             consoleHistoryIndex = consoleHistory.length;
-            appendConsoleLog(`> ${rawCmd}`, "#f39c12");
+            input.value = "";
 
-            if (connection && connection.state === signalR.HubConnectionState.Connected) {
-                connection.invoke("ExecuteConsoleCommand", rawCmd)
+            if (!connection || connection.state !== signalR.HubConnectionState.Connected) return;
+
+            // '/' prefix -> Interpreter + Command console pipeline
+            if (rawText.startsWith("/")) {
+                const cmdBody = rawText.slice(1).trim();
+                appendConsoleLog(`> /${cmdBody}`, "#f39c12");
+                connection.invoke("ExecuteConsoleCommand", cmdBody)
                     .then(output => {
                         if (output) {
                             const isErr = output.includes("[Error]") || output.includes("[Blocked]");
@@ -1892,9 +1899,36 @@
                         console.error("ExecuteConsoleCommand error:", err);
                         appendConsoleLog("[Error] Failed to execute command.", "#e74c3c");
                     });
-                input.value = "";
+                return;
             }
+
+            // Otherwise -> Mediator Chatroom pipeline (Public, Ghost, @Whisper, !bounty, !status)
+            connection.invoke("SendChatMessage", rawText)
+                .catch(err => console.error("SendChatMessage error:", err));
         }
+
+        connection.on("ReceiveChatMessage", (senderName, message, channel) => {
+            switch (channel) {
+                case "Ghost":
+                    appendConsoleLog(`[👻 Ghost] ${senderName}: ${message}`, "#bb8fce");
+                    break;
+                case "Whisper":
+                    appendConsoleLog(`[🔒 Whisper] ${senderName}: ${message}`, "#ff80ab");
+                    break;
+                case "Bounty":
+                    appendConsoleLog(`[Bounty] ${message}`, "#f1c40f");
+                    break;
+                case "Announcer":
+                    appendConsoleLog(`[Announcer] ${message}`, "#00e5ff");
+                    break;
+                case "System":
+                    appendConsoleLog(`[System] ${message}`, "#95a5a6");
+                    break;
+                default:
+                    appendConsoleLog(`${senderName}: ${message}`, "#ecf0f1");
+                    break;
+            }
+        });
 
         function undoCheat(cheatCode) {
             if (connection && connection.state === signalR.HubConnectionState.Connected) {

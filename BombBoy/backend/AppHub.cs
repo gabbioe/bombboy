@@ -130,4 +130,10 @@ public class AppHub : Hub
         await Clients.All.SendAsync("Gametick", _gameManager.GetFullMap());
         return output;
     }
+
+    public Task SendChatMessage(string message)
+    {
+        _gameManager.SendChatMessage(Context.ConnectionId, message);
+        return Task.CompletedTask;
+    }
 }
