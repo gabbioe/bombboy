@@ -431,11 +431,13 @@
             font-size: 20px;
         }
 
-        .tile-bomb {
+        .tile-bomb,
+        .tile-bomb-composite {
             display: flex;
             align-items: center;
             justify-content: center;
-            animation: bomb-pulse 0.6s infinite alternate;
+            animation: bomb-pulse 0.55s infinite alternate;
+            border-radius: 50%;
         }
 
         .tile-bomb::after {
@@ -444,24 +446,76 @@
             filter: drop-shadow(0 2px 4px rgba(0,0,0,0.7));
         }
 
-        @keyframes bomb-pulse {
-            from { transform: scale(0.95); }
-            to { transform: scale(1.12); }
+        .tile-bomb-plasma {
+            font-size: 24px;
+            box-shadow: 0 0 12px #00e5ff, inset 0 0 8px rgba(0, 229, 255, 0.45);
+            filter: drop-shadow(0 0 6px #00e5ff);
         }
 
-        .tile-blast {
-            background: radial-gradient(circle, #ffe600 0%, #ff5722 60%, #b71c1c 100%) !important;
+        .tile-bomb-void {
+            font-size: 24px;
+            box-shadow: 0 0 14px #d500f9, inset 0 0 8px rgba(213, 0, 249, 0.45);
+            filter: drop-shadow(0 0 6px #d500f9);
+        }
+
+        .tile-bomb-bio {
+            font-size: 24px;
+            box-shadow: 0 0 12px #00e676, inset 0 0 8px rgba(0, 230, 118, 0.45);
+            filter: drop-shadow(0 0 6px #00e676);
+        }
+
+        .tile-bomb-vortex {
+            font-size: 24px;
+            box-shadow: 0 0 12px #ff6d00, 0 0 16px #40c4ff;
+            filter: drop-shadow(0 0 5px #80d8ff);
+        }
+
+        @keyframes bomb-pulse {
+            from { transform: scale(0.92); }
+            to { transform: scale(1.15); }
+        }
+
+        .tile-blast,
+        .tile-blast-plasma,
+        .tile-blast-void,
+        .tile-blast-toxic,
+        .tile-blast-frost {
             border-radius: 4px;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 0 10px #ff5722, inset 0 0 8px #ffe600;
+            font-size: 21px;
             animation: blast-flicker 0.12s infinite alternate;
+        }
+
+        .tile-blast {
+            background: radial-gradient(circle, #ffe600 0%, #ff5722 60%, #b71c1c 100%) !important;
+            box-shadow: 0 0 10px #ff5722, inset 0 0 8px #ffe600;
         }
 
         .tile-blast::after {
             content: "💥";
             font-size: 22px;
+        }
+
+        .tile-blast-plasma {
+            background: radial-gradient(circle, #e0ffff 0%, #00e5ff 55%, #004ecb 100%) !important;
+            box-shadow: 0 0 12px #00e5ff, inset 0 0 8px #e0ffff;
+        }
+
+        .tile-blast-void {
+            background: radial-gradient(circle, #f3e5f5 0%, #d500f9 55%, #4a148c 100%) !important;
+            box-shadow: 0 0 12px #d500f9, inset 0 0 8px #ea80fc;
+        }
+
+        .tile-blast-toxic {
+            background: radial-gradient(circle, #f4ff81 0%, #00e676 55%, #1b5e20 100%) !important;
+            box-shadow: 0 0 12px #00e676, inset 0 0 8px #b9f6ca;
+        }
+
+        .tile-blast-frost {
+            background: radial-gradient(circle, #ffffff 0%, #80d8ff 55%, #01579b 100%) !important;
+            box-shadow: 0 0 12px #80d8ff, inset 0 0 8px #ffffff;
         }
 
         @keyframes blast-flicker {
@@ -902,12 +956,28 @@
             <div class="strategy-picker">
                 <label for="strategy-select">Bomb Strategy:</label>
                 <select id="strategy-select" class="strategy-select" onchange="onStrategyChange(this.value)">
-                    <option value="classic">1. Classic (Cross +)</option>
-                    <option value="diagonal">2. Diagonal (X-Shape)</option>
-                    <option value="area">3. Area Box (3x3)</option>
-                    <option value="piercing">4. Piercing (Penetrating)</option>
-                    <option value="floodfill">5. Flood Fill (BFS)</option>
+                    <optgroup label="Original Strategies (Flyweight Leaves)">
+                        <option value="classic">1. Classic (Cross +)</option>
+                        <option value="diagonal">2. Diagonal (X-Shape)</option>
+                        <option value="area">3. Area Box (3x3)</option>
+                        <option value="piercing">4. Piercing (Penetrating)</option>
+                        <option value="floodfill">5. Flood Fill (BFS)</option>
+                    </optgroup>
+                    <optgroup label="Standalone Geometric Leaves">
+                        <option value="ring">6. 🔮 Hollow Ring (Leaf Only)</option>
+                        <option value="knight">7. ⚡ Knight Star (Leaf Only)</option>
+                        <option value="checker">8. ☢️ Checkerboard (Leaf Only)</option>
+                    </optgroup>
+                    <optgroup label="Composite Trees (Leaves Combined)">
+                        <option value="bullseye">9. ⚛️ Bullseye Crosshair (Ring + Center + Sights)</option>
+                        <option value="grandmaster">0. 🌌 Grandmaster Crown (Classic + Knights + Frost X)</option>
+                        <option value="biochecker">-. ☣️ Bio-Checkerboard (Checkerboard + Corner Pins)</option>
+                        <option value="doublering">=. ☯️ Frostfire Double-Ring (2 Rings + Piercing)</option>
+                    </optgroup>
                 </select>
+            </div>
+            <div id="hud-strategy-tree-pill" class="hud-pill" style="display: none; font-size: 12px; color: #f39c12;" title="Active Composite / Leaf Explosion Tree">
+                🧬 <span id="hud-strategy-tree">Classic</span>
             </div>
         </div>
     </header>
@@ -1001,16 +1071,36 @@
     <!-- 2. GAME VIEW -->
     <section id="view-game" class="view-section">
         <div id="game-layout">
-            <!-- Cheat Code Box (Left of Map) -->
-            <div class="map-guide-card" style="width: 190px; padding: 10px 12px; flex-shrink: 0;">
-                <div class="map-guide-header" style="margin-bottom: 6px; padding-bottom: 4px;">
-                    <h4 class="map-guide-title" style="font-size: 12px;">Cheat Console</h4>
+            <!-- Unified Chat, Command & Cheat Console (Mediator + Interpreter + Command) -->
+            <div class="map-guide-card" style="width: 276px; padding: 10px 12px; flex-shrink: 0; display: flex; flex-direction: column; gap: 6px;">
+                <div class="map-guide-header" style="margin-bottom: 2px; padding-bottom: 5px;">
+                    <h4 class="map-guide-title" style="font-size: 12px;">💬 Chat &amp; Console</h4>
+                    <span style="font-size: 10px; color: #888; font-weight: bold;">Mediator · Interpreter</span>
                 </div>
-                <input id="cheat-input" type="text" placeholder="noclip / infinitebombs"
-                    style="width: 100%; background: #121416; color: #f0f0f0; border: 1px solid #3c444d; border-radius: 4px; padding: 6px 8px; font-size: 12px; margin-bottom: 6px; outline: none;"
-                    onkeydown="if(event.key === 'Enter') submitCheat()" />
-                <button class="btn-action" style="width: 100%; padding: 6px 8px; font-size: 12px;" onclick="submitCheat()">Apply</button>
-                <div id="active-cheats-list" style="margin-top: 8px; display: flex; flex-direction: column; gap: 6px;"></div>
+
+                <div id="console-output-log"
+                    style="background: #0d0f11; border: 1px solid #2b3137; border-radius: 4px; padding: 6px 8px; height: 175px; overflow-y: auto; font-family: Consolas, monospace; font-size: 11px; line-height: 1.4; color: #b8c4ce; white-space: pre-wrap; word-break: break-word;">
+<span style="color: #7f8c8d;">Chat freely, or use '/' for commands ('/@name msg', '/bounty', '/help')...</span></div>
+
+                <div style="display: flex; gap: 4px;">
+                    <input id="cheat-input" type="text" placeholder="Chat, /@name, /bounty, or /noclip"
+                        style="flex: 1; min-width: 0; background: #121416; color: #f0f0f0; border: 1px solid #3c444d; border-radius: 4px; padding: 6px 8px; font-family: Consolas, monospace; font-size: 11px; outline: none;"
+                        onkeydown="handleConsoleKeyDown(event)" />
+                    <button class="btn-action" style="padding: 6px 10px; font-size: 11px;" onclick="submitCheat()">Send</button>
+                </div>
+
+                <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px;">
+                    <button type="button" onclick="fillAndRunConsole('/bounty')" title="Mediator: BountyMasterColleague" style="background: #2c2518; color: #f1c40f; border: 1px solid #6b531d; border-radius: 3px; padding: 2px 5px; font-size: 10px; cursor: pointer;">🎯 /bounty</button>
+                    <button type="button" onclick="fillAndRunConsole('/status')" title="Mediator: ArenaAnnouncerColleague" style="background: #172a31; color: #00e5ff; border: 1px solid #245363; border-radius: 3px; padding: 2px 5px; font-size: 10px; cursor: pointer;">📢 /status</button>
+                    <button type="button" onclick="fillAndRunConsole('GLHF everyone!')" title="Mediator: PlayerChatColleague" style="background: #252b31; color: #ecf0f1; border: 1px solid #3a424a; border-radius: 3px; padding: 2px 5px; font-size: 10px; cursor: pointer;">💬 GLHF!</button>
+                    <button type="button" onclick="fillAndRunConsole('/help')" style="background: #252b31; color: #bdc3c7; border: 1px solid #3a424a; border-radius: 3px; padding: 2px 5px; font-size: 10px; cursor: pointer;">/help</button>
+                    <button type="button" onclick="fillAndRunConsole('/noclip')" style="background: #252b31; color: #2ecc71; border: 1px solid #3a424a; border-radius: 3px; padding: 2px 5px; font-size: 10px; cursor: pointer;">/noclip</button>
+                    <button type="button" onclick="fillAndRunConsole('/godmode')" style="background: #252b31; color: #2ecc71; border: 1px solid #3a424a; border-radius: 3px; padding: 2px 5px; font-size: 10px; cursor: pointer;">/godmode</button>
+                    <button type="button" onclick="fillAndRunConsole('/repeat 3 spawn fusion')" style="background: #252b31; color: #f39c12; border: 1px solid #3a424a; border-radius: 3px; padding: 2px 5px; font-size: 10px; cursor: pointer;">/repeat 3 fusion</button>
+                    <button type="button" onclick="fillAndRunConsole('/@all give range 4 ; spawn weapon')" style="background: #252b31; color: #3498db; border: 1px solid #3a424a; border-radius: 3px; padding: 2px 5px; font-size: 10px; cursor: pointer;">/@all range+wep</button>
+                </div>
+
+                <div id="active-cheats-list" style="margin-top: 4px; display: flex; flex-direction: column; gap: 5px;"></div>
             </div>
 
             <div id="game-container">
@@ -1056,7 +1146,8 @@
                 Move: <strong>W, A, S, D</strong> or <strong>Arrows</strong> &nbsp;|&nbsp;
                 Bomb: <strong>Spacebar</strong> &nbsp;|&nbsp;
                 Use Weapon: <strong>E</strong> or <strong>Shift+Space</strong> &nbsp;|&nbsp;
-                Strategy: <strong>1-5</strong>
+                Leaves: <strong>1-8</strong> &nbsp;|&nbsp;
+                Composites: <strong>9, 0, -, =</strong>
             </div>
 
             <!-- D-Pad for mouse testing -->
@@ -1583,8 +1674,32 @@
 
             if (symbol === "💣" || symbol === "O" || symbol === "Bomb") {
                 entEl.classList.add("tile-bomb");
+            } else if (symbol === "⚛️") {
+                entEl.classList.add("tile-bomb-composite", "tile-bomb-plasma");
+                entEl.textContent = symbol;
+            } else if (symbol === "🌌") {
+                entEl.classList.add("tile-bomb-composite", "tile-bomb-void");
+                entEl.textContent = symbol;
+            } else if (symbol === "☣️") {
+                entEl.classList.add("tile-bomb-composite", "tile-bomb-bio");
+                entEl.textContent = symbol;
+            } else if (symbol === "☯️") {
+                entEl.classList.add("tile-bomb-composite", "tile-bomb-vortex");
+                entEl.textContent = symbol;
             } else if (symbol === "💥" || symbol === "*" || symbol === "Blast") {
                 entEl.classList.add("tile-blast");
+            } else if (symbol === "⚡") {
+                entEl.classList.add("tile-blast-plasma");
+                entEl.textContent = symbol;
+            } else if (symbol === "🔮") {
+                entEl.classList.add("tile-blast-void");
+                entEl.textContent = symbol;
+            } else if (symbol === "☢️") {
+                entEl.classList.add("tile-blast-toxic");
+                entEl.textContent = symbol;
+            } else if (symbol === "❄️") {
+                entEl.classList.add("tile-blast-frost");
+                entEl.textContent = symbol;
             } else {
                 entEl.textContent = symbol;
             }
@@ -1625,11 +1740,22 @@
                 const isMe = (myConnectionId && id === myConnectionId);
                 const isAlive = player.isAlive !== undefined ? player.isAlive : (player.IsAlive !== undefined ? player.IsAlive : true);
                 const lives = player.Lives !== undefined ? player.Lives : (player.lives !== undefined ? player.lives : 1);
+                const isGodMode = player.IsGodMode || player.isGodMode || false;
                 const hasShield = player.HasShield || player.hasShield || false;
                 const weaponEmoji = player.WeaponEmoji || player.weaponEmoji || "";
                 const weaponUses = player.WeaponUses !== undefined ? player.WeaponUses : (player.weaponUses || 0);
                 const bombCount = player.BombCount !== undefined ? player.BombCount : (player.bombCount || 1);
+                const bombStrategy = player.BombStrategy || player.bombStrategy || "Classic";
                 const direction = player.Direction || player.direction || "Down";
+
+                if (isMe) {
+                    const treePill = document.getElementById("hud-strategy-tree-pill");
+                    const treeText = document.getElementById("hud-strategy-tree");
+                    if (treePill && treeText) {
+                        treePill.style.display = "inline-flex";
+                        treeText.textContent = bombStrategy;
+                    }
+                }
 
                 if (!isAlive) return;
 
@@ -1639,7 +1765,7 @@
                 playerEl.style.left = (x * TILE_SIZE + 4) + "px";
                 playerEl.style.top = (y * TILE_SIZE + 4) + "px";
                 playerEl.textContent = name.slice(-2).toUpperCase();
-                playerEl.title = `${name} | Lives: ${lives} | Facing: ${direction}`;
+                playerEl.title = `${name} | Lives: ${lives} | Facing: ${direction} | Bomb: ${bombStrategy}`;
 
                 // Directional arrow hovering above player
                 const dirEl = document.createElement("div");
@@ -1665,7 +1791,12 @@
                 infoEl.style.top = (y * TILE_SIZE + 34) + "px";
 
                 const livesChip = document.createElement("span");
-                livesChip.textContent = "❤️".repeat(Math.max(0, lives));
+                if (isGodMode) {
+                    livesChip.textContent = "💛";
+                    livesChip.style.filter = "drop-shadow(0 0 4px #f1c40f)";
+                } else {
+                    livesChip.textContent = lives > 3 ? `❤️x${lives}` : "❤️".repeat(Math.max(0, lives));
+                }
                 infoEl.appendChild(livesChip);
 
                 const bombChip = document.createElement("span");
@@ -1689,7 +1820,7 @@
 
         function placeBomb() {
             if (connection && connection.state === signalR.HubConnectionState.Connected) {
-                connection.invoke("PlaceBomb", selectedStrategy).catch(err => console.error("PlaceBomb error:", err));
+                connection.invoke("PlaceBomb", null).catch(err => console.error("PlaceBomb error:", err));
             }
         }
 
@@ -1699,19 +1830,126 @@
             }
         }
 
-        function submitCheat() {
+        const consoleHistory = [];
+        let consoleHistoryIndex = -1;
+
+        function appendConsoleLog(text, color = "#b8c4ce") {
+            const logEl = document.getElementById("console-output-log");
+            if (!logEl || !text) return;
+            const line = document.createElement("div");
+            line.style.color = color;
+            line.style.marginTop = "3px";
+            line.textContent = text;
+            logEl.appendChild(line);
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function handleConsoleKeyDown(event) {
             const input = document.getElementById("cheat-input");
-            if (!input || !input.value.trim()) return;
-            if (connection && connection.state === signalR.HubConnectionState.Connected) {
-                connection.invoke("ActivateCheat", input.value.trim()).catch(err => console.error("ActivateCheat error:", err));
-                input.value = "";
-                input.blur();
+            if (!input) return;
+
+            if (event.key === "Enter") {
+                event.preventDefault();
+                submitCheat();
+            } else if (event.key === "ArrowUp") {
+                if (consoleHistory.length > 0) {
+                    event.preventDefault();
+                    consoleHistoryIndex = Math.max(0, consoleHistoryIndex - 1);
+                    input.value = consoleHistory[consoleHistoryIndex] || "";
+                }
+            } else if (event.key === "ArrowDown") {
+                if (consoleHistory.length > 0) {
+                    event.preventDefault();
+                    consoleHistoryIndex = Math.min(consoleHistory.length, consoleHistoryIndex + 1);
+                    input.value = consoleHistoryIndex < consoleHistory.length ? consoleHistory[consoleHistoryIndex] : "";
+                }
             }
         }
 
+        function fillAndRunConsole(cmdText) {
+            const input = document.getElementById("cheat-input");
+            if (!input) return;
+            input.value = cmdText;
+            submitCheat();
+        }
+
+        function isMediatorSlashCommand(rawText) {
+            const lower = rawText.toLowerCase();
+            if (lower === "/bounty" || lower.startsWith("/bounty ") || lower === "/status") {
+                return true;
+            }
+            if (lower.startsWith("/@") && !rawText.includes(";")) {
+                const firstWord = lower.split(/\s+/)[0];
+                const interpreterScopes = new Set(["/@all", "/@alive", "/@enemies", "/@me"]);
+                return !interpreterScopes.has(firstWord);
+            }
+            return false;
+        }
+
+        function submitCheat() {
+            const input = document.getElementById("cheat-input");
+            if (!input || !input.value.trim()) return;
+            const rawText = input.value.trim();
+
+            consoleHistory.push(rawText);
+            consoleHistoryIndex = consoleHistory.length;
+            input.value = "";
+
+            if (!connection || connection.state !== signalR.HubConnectionState.Connected) return;
+
+            // '/' commands (except Mediator chat directives '/bounty', '/status', '/@PlayerName') -> Interpreter + Command
+            if (rawText.startsWith("/") && !isMediatorSlashCommand(rawText)) {
+                const cmdBody = rawText.slice(1).trim();
+                appendConsoleLog(`> /${cmdBody}`, "#f39c12");
+                connection.invoke("ExecuteConsoleCommand", cmdBody)
+                    .then(output => {
+                        if (output) {
+                            const isErr = output.includes("[Error]") || output.includes("[Blocked]");
+                            appendConsoleLog(output, isErr ? "#e74c3c" : "#2ecc71");
+                        }
+                    })
+                    .catch(err => {
+                        console.error("ExecuteConsoleCommand error:", err);
+                        appendConsoleLog("[Error] Failed to execute command.", "#e74c3c");
+                    });
+                return;
+            }
+
+            // Plain chat OR Mediator slash commands ('/bounty', '/status', '/@PlayerName <msg>')
+            connection.invoke("SendChatMessage", rawText)
+                .catch(err => console.error("SendChatMessage error:", err));
+        }
+
+        connection.on("ReceiveChatMessage", (senderName, message, channel) => {
+            switch (channel) {
+                case "Ghost":
+                    appendConsoleLog(`[👻 Ghost] ${senderName}: ${message}`, "#bb8fce");
+                    break;
+                case "Whisper":
+                    appendConsoleLog(`[🔒 Whisper] ${senderName}: ${message}`, "#ff80ab");
+                    break;
+                case "Bounty":
+                    appendConsoleLog(`[Bounty] ${message}`, "#f1c40f");
+                    break;
+                case "Announcer":
+                    appendConsoleLog(`[Announcer] ${message}`, "#00e5ff");
+                    break;
+                case "System":
+                    appendConsoleLog(`[System] ${message}`, "#95a5a6");
+                    break;
+                default:
+                    appendConsoleLog(`${senderName}: ${message}`, "#ecf0f1");
+                    break;
+            }
+        });
+
         function undoCheat(cheatCode) {
             if (connection && connection.state === signalR.HubConnectionState.Connected) {
-                connection.invoke("UndoCheat", cheatCode).catch(err => console.error("UndoCheat error:", err));
+                connection.invoke("ExecuteConsoleCommand", `undo ${cheatCode}`)
+                    .then(output => {
+                        if (output) appendConsoleLog(output, "#e67e22");
+                    })
+                    .catch(err => console.error("UndoCheat error:", err));
             }
         }
 
@@ -1768,6 +2006,13 @@
             if (event.key === "3") { onStrategyChange("area"); return; }
             if (event.key === "4") { onStrategyChange("piercing"); return; }
             if (event.key === "5") { onStrategyChange("floodfill"); return; }
+            if (event.key === "6") { onStrategyChange("ring"); return; }
+            if (event.key === "7") { onStrategyChange("knight"); return; }
+            if (event.key === "8") { onStrategyChange("checker"); return; }
+            if (event.key === "9") { onStrategyChange("bullseye"); return; }
+            if (event.key === "0") { onStrategyChange("grandmaster"); return; }
+            if (event.key === "-") { onStrategyChange("biochecker"); return; }
+            if (event.key === "=") { onStrategyChange("doublering"); return; }
 
             if (event.code === "Space" || event.key === " ") {
                 event.preventDefault();
@@ -1984,6 +2229,10 @@
                         <span class="guide-item-icon">🧥</span>
                         <div class="guide-item-desc"><strong>Frozen Coat (Shield)</strong><span>Ice fur coat – acts as a shield absorbing one fatal blow.</span></div>
                     </div>
+                    <div class="guide-item">
+                        <span class="guide-item-icon">💠</span>
+                        <div class="guide-item-desc"><strong>Frost Bomb Fusion (Composite)</strong><span>Fuses an extra explosion pattern into your active bomb strategy tree.</span></div>
+                    </div>
                 `;
             } else {
                 wepCont.innerHTML = `
@@ -2014,6 +2263,10 @@
                     <div class="guide-item">
                         <span class="guide-item-icon">❤️</span>
                         <div class="guide-item-desc"><strong>Extra Life</strong><span>Grants an extra life (capped at 3 lives).</span></div>
+                    </div>
+                    <div class="guide-item">
+                        <span class="guide-item-icon">🧬</span>
+                        <div class="guide-item-desc"><strong>Bomb Fusion (Composite)</strong><span>Fuses an extra explosion pattern into your active bomb strategy tree.</span></div>
                     </div>
                 `;
             }

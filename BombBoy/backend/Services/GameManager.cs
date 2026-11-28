@@ -1,5 +1,7 @@
 using BombBoy.Models.Adapter;
 using BombBoy.Models;
+using BombBoy.Models.Interpreter;
+using BombBoy.Models.Mediator;
 using BombBoy.Models.Observer;
 using BombBoy.Models.Strategies;
 using BombBoy.Services.Proxy;
@@ -23,6 +25,7 @@ public class GameManager : IGameManager
     private readonly RoundService _round = new();
     private readonly PlayerService _players = new();
     private readonly CheatService _cheats = new();
+    private readonly ConsoleInterpreterClient _consoleInterpreter = new();
     private readonly GameStateService _gameState = new();
     private readonly Match _match = new Match();
     private readonly LeaderboardObserver _leaderboard = new();
@@ -30,8 +33,13 @@ public class GameManager : IGameManager
     private readonly ExternalAudioEngine _audioEngine = new();
     private readonly ISoundEffectService _soundService;
     private readonly AudioObserver _audioObserver;
+    private readonly GameChatroomMediator _chatMediator;
+    private readonly BountyMasterColleague _bountyColleague;
+    private readonly ArenaAnnouncerColleague _announcerColleague;
+    private readonly SoundCueColleague _soundCueColleague;
 
     public event Action<string, float>? OnSoundEffectPlayed;
+    public event Action<string, string, string, string>? OnChatMessageDelivered;
 
     public GameStage Stage => _round.Stage;
     public bool IsHost(string connectionId) => _lobby.IsHost(connectionId);
@@ -65,6 +73,17 @@ public class GameManager : IGameManager
         _match.Attach(_leaderboard);
         _match.Attach(_logger);
         _match.Attach(_audioObserver);
+
+        _chatMediator = new GameChatroomMediator(() => _round.Stage);
+        _bountyColleague = new BountyMasterColleague(_chatMediator, _match);
+        _announcerColleague = new ArenaAnnouncerColleague(_chatMediator, _match, _round);
+        _soundCueColleague = new SoundCueColleague(_chatMediator, _soundService);
+
+        _chatMediator.Register(_bountyColleague);
+        _chatMediator.Register(_announcerColleague);
+        _chatMediator.Register(_soundCueColleague);
+
+        _match.OnPlayerEliminated += (victim, killer) => _bountyColleague.CheckBountyClaimed(victim, killer);
     }
 
     public void SetSoundVolume(float volume) => _soundService.SetVolume(volume);
@@ -87,6 +106,12 @@ public class GameManager : IGameManager
             player.Y = startPos[1];
         }
 
+        var chatColleague = new PlayerChatColleague(
+            _chatMediator,
+            player,
+            (recipientId, senderName, msg, channel) => OnChatMessageDelivered?.Invoke(recipientId, senderName, msg, channel));
+        _chatMediator.Register(chatColleague);
+
         return (player, false);
     }
 
@@ -101,6 +126,7 @@ public class GameManager : IGameManager
         _lobby.RemovePlayer(connectionId);
         _match.RemovePlayer(connectionId);
         _cheats.RemovePlayer(connectionId);
+        _chatMediator.Unregister(connectionId);
         bool removed = _players.TryRemovePlayer(connectionId, out player);
 
         if (_round.Stage == GameStage.Lobby)
@@ -156,8 +182,10 @@ public class GameManager : IGameManager
         }
 
         _cheats.Clear();
+        _bountyColleague.ResetBounty();
         _match.ResetForNewRound(_round.SelectedMapType);
         _match.NotifyRoundStarted(_round.CurrentRound, _round.SelectedMapType);
+        _announcerColleague.AnnounceRoundStart(_round.CurrentRound, _round.SelectedMapType);
     }
 
     public void ReturnToLobby()
@@ -183,6 +211,7 @@ public class GameManager : IGameManager
             if (_round.TryConcludeRound(_match.GetAlivePlayers(), out var winner))
             {
                 _match.NotifyRoundEnded(winner, _round.CurrentRound, _round.TotalRounds);
+                _announcerColleague.AnnounceRoundEnd(_round.RoundWinnerName, _round.CurrentRound);
             }
         }
         else if (_round.Stage == GameStage.RoundEnd)
@@ -192,8 +221,10 @@ public class GameManager : IGameManager
                 if (startNextRound)
                 {
                     _cheats.Clear();
+                    _bountyColleague.ResetBounty();
                     _match.ResetForNewRound(_round.SelectedMapType, useSameMap);
                     _match.NotifyRoundStarted(_round.CurrentRound, _round.SelectedMapType);
+                    _announcerColleague.AnnounceRoundStart(_round.CurrentRound, _round.SelectedMapType);
                 }
                 else
                 {
@@ -250,4 +281,19 @@ public class GameManager : IGameManager
 
     public void UndoCheat(string connectionId, string cheatCode) =>
         _cheats.UndoCheat(connectionId, cheatCode);
+
+    public string ExecuteConsoleCommand(string connectionId, string commandLine)
+    {
+        if (!_players.TryGetPlayer(connectionId, out var caller) || caller == null)
+            return "[Error] Caller player not found.";
+
+        var context = new ConsoleContext(commandLine, caller, _match, _round, _cheats);
+        return _consoleInterpreter.Execute(context);
+    }
+
+    public void SendChatMessage(string connectionId, string message)
+    {
+        var senderColleague = _chatMediator.GetPlayerColleague(connectionId);
+        senderColleague?.Send(message);
+    }
 }

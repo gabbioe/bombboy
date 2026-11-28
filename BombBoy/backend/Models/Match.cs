@@ -46,6 +46,7 @@ namespace BombBoy.Models
         }
 
         public string CurrentMapType { get; private set; } = "normal";
+        public event Action<Player, Player?>? OnPlayerEliminated;
 
         #region Observer Pattern Implementation
         public void Attach(IGameEventObserver observer)
@@ -67,8 +68,11 @@ namespace BombBoy.Models
             }
         }
 
-        public void NotifyPlayerDied(Player victim, Player? killer) =>
+        public void NotifyPlayerDied(Player victim, Player? killer)
+        {
             NotifyObservers(obs => obs.OnPlayerDied(victim, killer));
+            OnPlayerEliminated?.Invoke(victim, killer);
+        }
 
         public void NotifyRoundEnded(Player? winner, int roundNumber, int totalRounds) =>
             NotifyObservers(obs => obs.OnRoundEnded(winner, roundNumber, totalRounds));
@@ -440,6 +444,80 @@ namespace BombBoy.Models
             }
             _items.Add(newItem);
             NotifyItemSpawned(x, y);
+        }
+
+        public (int x, int y)? SpawnConsoleItem(string kind)
+        {
+            var spot = FindRandomOpenFloorTile(avoidItems: true);
+            if (!spot.HasValue)
+                return null;
+
+            var (x, y) = spot.Value;
+            IItem? item = kind.ToLowerInvariant() switch
+            {
+                "weapon" => _itemFactory.CreateWeapon(x, y),
+                "powerup" => _itemFactory.CreatePowerup(x, y),
+                "fusion" or "crate" => CurrentMapType.ToLowerInvariant() == "ice"
+                    ? new FrozenBombFusionPowerup(x, y)
+                    : new BombFusionPowerup(x, y),
+                "shield" => CurrentMapType.ToLowerInvariant() == "ice"
+                    ? new FrozenShieldPowerup(x, y)
+                    : new ShieldPowerup(x, y),
+                _ => null
+            };
+
+            if (item == null)
+                return null;
+
+            _items.Add(item);
+            NotifyItemSpawned(x, y);
+            return (x, y);
+        }
+
+        public (int x, int y)? SpawnConsoleBomb(Player owner)
+        {
+            var spot = FindRandomOpenFloorTile(avoidItems: false);
+            if (!spot.HasValue)
+                return null;
+
+            var (x, y) = spot.Value;
+            var bomb = new Bomb(x, y, owner.BombRange, owner.ActiveBombStrategy, owner.Id);
+            ActiveBombs.Add(bomb);
+            AddEntityToGrid(x, y, bomb);
+            NotifyBombPlanted(owner);
+            return (x, y);
+        }
+
+        public int ClearDestructibleBlocks(int maxCount = 999)
+        {
+            int cleared = 0;
+            for (int x = 1; x < GameMap.GetX() - 1 && cleared < maxCount; x++)
+            {
+                for (int y = 1; y < GameMap.GetY() - 1 && cleared < maxCount; y++)
+                {
+                    if (GameMap.GetTile(x, y) is DestructableTile)
+                    {
+                        GameMap.DestroyTile(x, y);
+                        cleared++;
+                    }
+                }
+            }
+            return cleared;
+        }
+
+        private (int x, int y)? FindRandomOpenFloorTile(bool avoidItems)
+        {
+            for (int attempt = 0; attempt < 40; attempt++)
+            {
+                int x = _rand.Next(1, GameMap.GetX() - 1);
+                int y = _rand.Next(1, GameMap.GetY() - 1);
+                bool ok = GameMap.GetTile(x, y)?.Type == "Tile"
+                    && !ActiveBombs.Any(b => b.X == x && b.Y == y)
+                    && (!avoidItems || !_items.Any(i => i.X == x && i.Y == y));
+                if (ok)
+                    return (x, y);
+            }
+            return null;
         }
 
         // method to check for pickups

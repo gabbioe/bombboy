@@ -43,3 +43,24 @@ public class CheatCode_InfiniteBombs : ICommand
         _player.BombCount = _previousBombCount;
     }
 }
+
+public class CheatCode_GodMode : ICommand
+{
+    private readonly Player _player;
+    public string Name => "godmode";
+
+    public CheatCode_GodMode(Player player)
+    {
+        _player = player;
+    }
+
+    public void Execute()
+    {
+        _player.IsGodMode = true;
+    }
+
+    public void Undo()
+    {
+        _player.IsGodMode = false;
+    }
+}

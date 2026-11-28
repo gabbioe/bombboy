@@ -1,5 +1,10 @@
+using System;
+using System.Collections.Generic;
 using BombBoy.Models;
+using BombBoy.Models.Composite;
 using BombBoy.Models.Decorator;
+using BombBoy.Models.Flyweight;
+using BombBoy.Models.Strategies;
 using BombBoy.Models.Visitor;
 
 namespace BombBoy.Models.Items
@@ -143,6 +148,62 @@ namespace BombBoy.Models.Items
     {
         public FrozenStatPowerup(int x, int y, string stat) : base(x, y, stat) { }
         public override string GetEmoji() => AffectedStat == "BombRange" ? "↕️" : "✨";
+    }
+
+    /// <summary>
+    /// Dynamically upgrades a player's ActiveBombStrategy into a Composite tree (or deeper nested Composite)
+    /// by fusing an additional Flyweight leaf explosion strategy into their current bomb pattern.
+    /// </summary>
+    public class BombFusionPowerup : Powerup
+    {
+        private static readonly (string key, Type checkType)[] CandidateShapes =
+        {
+            ("ring", typeof(HollowRingLeaf)),
+            ("knight", typeof(KnightScatterLeaf)),
+            ("checker", typeof(CheckerboardLeaf)),
+            ("diagonal", typeof(DiagonalExplosionStrategy)),
+            ("piercing", typeof(PiercingLineExplosionStrategy))
+        };
+
+        public BombFusionPowerup(int x, int y) : base(x, y) { }
+
+        public override string GetEmoji() => "🧬";
+
+        protected override void Use(Player player)
+        {
+            var current = player.ActiveBombStrategy ?? ExplosionStrategyFlyweightFactory.GetStrategy("classic");
+            var missingKeys = new List<string>();
+
+            foreach (var (key, checkType) in CandidateShapes)
+            {
+                bool alreadyPresent = current is CompositeExplosionStrategy comp
+                    ? comp.ContainsStrategyType(checkType)
+                    : current is ExplosionLeaf leaf
+                        ? leaf.InnerStrategy.GetType() == checkType
+                        : current.GetType() == checkType;
+
+                if (!alreadyPresent)
+                {
+                    missingKeys.Add(key);
+                }
+            }
+
+            if (missingKeys.Count > 0)
+            {
+                string chosenKey = missingKeys[Random.Shared.Next(missingKeys.Count)];
+                player.ApplyPowerUp(CompositeBombPresets.Fuse(current, chosenKey));
+            }
+            else
+            {
+                player.BombRange = Math.Min(player.BombRange + 1, 9);
+            }
+        }
+    }
+
+    public class FrozenBombFusionPowerup : BombFusionPowerup
+    {
+        public FrozenBombFusionPowerup(int x, int y) : base(x, y) { }
+        public override string GetEmoji() => "💠";
     }
 
 }

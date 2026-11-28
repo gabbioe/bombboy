@@ -28,6 +28,12 @@ public sealed class GameManagerProtectionProxy : IGameManager
         remove => _realManager.OnSoundEffectPlayed -= value;
     }
 
+    public event Action<string, string, string, string>? OnChatMessageDelivered
+    {
+        add => _realManager.OnChatMessageDelivered += value;
+        remove => _realManager.OnChatMessageDelivered -= value;
+    }
+
     public int TotalRounds
     {
         get { lock (_lock) return _realManager.TotalRounds; }
@@ -257,6 +263,34 @@ public sealed class GameManagerProtectionProxy : IGameManager
 
             InvalidateStateCache();
             _realManager.UndoCheat(connectionId, cheatCode);
+        }
+    }
+
+    public string ExecuteConsoleCommand(string connectionId, string commandLine)
+    {
+        lock (_lock)
+        {
+            string trimmed = (commandLine ?? string.Empty).Trim();
+            bool isHelp = trimmed.Equals("help", StringComparison.OrdinalIgnoreCase)
+                       || trimmed.Equals("/help", StringComparison.OrdinalIgnoreCase);
+
+            if (!isHelp && _realManager.Stage != GameStage.InGame)
+                return "[Blocked] Match must be InGame to execute console commands (or type 'help').";
+
+            InvalidateStateCache();
+            return _realManager.ExecuteConsoleCommand(connectionId, commandLine ?? string.Empty);
+        }
+    }
+
+    public void SendChatMessage(string connectionId, string message)
+    {
+        lock (_lock)
+        {
+            if (string.IsNullOrWhiteSpace(message))
+                return;
+
+            string safeMessage = message.Length > 200 ? message[..200] : message;
+            _realManager.SendChatMessage(connectionId, safeMessage);
         }
     }
 }
