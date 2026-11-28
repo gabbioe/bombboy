@@ -5,6 +5,7 @@ using BombBoy.Models.Flyweight;
 using BombBoy.Models.GridEntities;
 using BombBoy.Models.ItemFactories;
 using BombBoy.Models.Items;
+using BombBoy.Models.Memento;
 using BombBoy.Models.Tiles;
 using BombBoy.Models.Observer;
 using BombBoy.Models.State;
@@ -36,6 +37,7 @@ namespace BombBoy.Models
         // for items (weapons and powerups):
         private List<IItem> _items = new List<IItem>();
         private IAbstractItemFactory _itemFactory;
+        private readonly PlayerBuffCaretaker _buffCaretaker = new();
         private Random _rand = new Random();
 
         public Match(IAbstractItemFactory? itemFactory = null)
@@ -115,6 +117,7 @@ namespace BombBoy.Models
         {
             if (!victim.IsAlive) return false;
 
+            int previousLives = victim.Lives;
             bool died = victim.TakeDamage();
             if (died)
             {
@@ -122,6 +125,13 @@ namespace BombBoy.Models
             }
             else
             {
+                if (victim.Lives < previousLives)
+                {
+                    // Player survived by losing an extra life: restore baseline Memento to clear accumulated buffs
+                    int remainingLives = victim.Lives;
+                    _buffCaretaker.ClearAllBuffs(victim);
+                    victim.Lives = remainingLives;
+                }
                 NotifyPlayerDamaged(victim, killer);
             }
             return died;
@@ -269,16 +279,8 @@ namespace BombBoy.Models
             AvailableStartingPositions = new List<int> { 0, 1, 2, 3 };
             foreach (var p in Players.Values)
             {
-                p.IsAlive = true;
-                p.Lives = 1;
-                p.HasShield = false;
-                p.ShieldDuration = 0;
-                p.CanPassThroughWalls = false; // cheat
-                p.ResetDecorators();
-                p.TransitionToState(new HealthyState());
-                p.CurrentWeapon = null;
-                p.BombCount = 1;
-                p.BombRange = 1;
+                // Restore player to clean baseline Memento (clears all buffs, weapons, decorators, and status states)
+                _buffCaretaker.ClearAllBuffs(p);
                 if (AvailableStartingPositions.Count > 0)
                 {
                     p.StartingLocation = AvailableStartingPositions[0];
@@ -305,6 +307,7 @@ namespace BombBoy.Models
             if (PlayerCount < 4 && AvailableStartingPositions.Count > 0)
             {
                 Players[newPlayer.Id] = newPlayer;
+                _buffCaretaker.SaveBaseline(newPlayer);
                 int locIndex = AvailableStartingPositions[0];
                 int[] playerLocation = StartingPositions[locIndex];
                 newPlayer.StartingLocation = locIndex;
@@ -323,6 +326,7 @@ namespace BombBoy.Models
             if (Players.TryGetValue(playerId, out var player))
             {
                 Players.Remove(playerId);
+                _buffCaretaker.RemovePlayer(playerId);
                 AvailableStartingPositions.Add(player.StartingLocation);
                 PlayerCount = Math.Max(0, PlayerCount - 1);
                 return true;
@@ -444,6 +448,7 @@ namespace BombBoy.Models
             var item = _items.FirstOrDefault(i => i.X == player.X && i.Y == player.Y);
             if (item != null)
             {
+                _buffCaretaker.SavePreBuffCheckpoint(player, item.GetType().Name);
                 item.Pickup(player);
                 _items.Remove(item);
                 NotifyItemPickedUp(player, item is Weapon ? "Weapon" : "Powerup");
